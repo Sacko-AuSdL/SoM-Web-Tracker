@@ -1,0 +1,21 @@
+{
+  "poptracker": {
+    "sourcePackage": "SoM-Open_Mode-Tracker",
+    "copyright": "2020-2023 Cyb3R",
+    "notice": "public/POPTRACKER_LICENSE.txt",
+    "images": "src/assets/poptracker",
+    "snapshots": ["poptracker/locations/locations.json", "poptracker/locations/hints.json", "poptracker/maps/maps.json"],
+    "copyPolicy": "Accepted existing files copied unchanged; no new third-party assets",
+    "underlyingArtwork": "Game artwork rights are separate from the package MIT notice"
+  },
+  "randomizerMappings": {
+    "version": "1.49",
+    "definitions": "config/settings/OpenWorldSettings.cs:177-179",
+    "behavior": "processing/openworld/OpenWorldCharacterSelection.cs:38-165",
+    "serialization": "config/ui/UiOptionsManager.cs",
+    "defaults": { "opStartChar": "boy", "opCharacters": "findbothL1" },
+    "seedSpecificIdentities": ["opStartChar=random", "start1only", "start1find1", "find1L1", "find1CL"],
+    "runtimeDependency": false
+  },
+  "font": { "name": "Manaspace", "author": "codeman38 / zone38", "notice": "public/fonts/license.txt" }
+}

@@ -1,7 +1,7 @@
 import type { LocationId } from "./locationDefinitions";
 
-// Generated from SoM-Open_Mode-Tracker/maps/maps.json and locations/locations.json.
-// Run `npm run generate:map` after updating the authoritative package.
+// Generated from bundled source/poptracker maps and locations snapshots.
+// Run `npm run generate:map` after updating the authoritative snapshots.
 export const MAP_IMAGE_SIZE = {"width":4096,"height":4096} as const;
 
 export interface MapGroup {

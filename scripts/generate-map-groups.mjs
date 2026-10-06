@@ -4,7 +4,7 @@ import { dirname, resolve } from "node:path";
 import { LOCATION_DEFINITIONS } from "../src/data/locationDefinitions.ts";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const poptrackerRoot = resolve(projectRoot, "../SoM-Open_Mode-Tracker");
+const poptrackerRoot = resolve(projectRoot, "source/poptracker");
 const maps = JSON.parse(readFileSync(resolve(poptrackerRoot, "maps/maps.json"), "utf8"));
 const locationTree = JSON.parse(
   readFileSync(resolve(poptrackerRoot, "locations/locations.json"), "utf8")
@@ -16,7 +16,7 @@ if (overworld?.img !== "images/overworld_map.png") {
   throw new Error("The authoritative overworld image changed; inspect the new map before regenerating");
 }
 
-const image = readFileSync(resolve(poptrackerRoot, overworld.img));
+const image = readFileSync(resolve(projectRoot, "src/assets/poptracker/overworld_map.png"));
 const width = image.readUInt32BE(16);
 const height = image.readUInt32BE(20);
 const checksByPath = new Map(LOCATION_DEFINITIONS.map((check) => [check.legacyPath, check]));
@@ -77,8 +77,8 @@ if (unmatchedSections.length || missing.length) {
 const lines = [
   'import type { LocationId } from "./locationDefinitions";',
   "",
-  "// Generated from SoM-Open_Mode-Tracker/maps/maps.json and locations/locations.json.",
-  "// Run `npm run generate:map` after updating the authoritative package.",
+  "// Generated from bundled source/poptracker maps and locations snapshots.",
+  "// Run `npm run generate:map` after updating the authoritative snapshots.",
   "export const MAP_IMAGE_SIZE = " + JSON.stringify({ width, height }) + " as const;",
   "",
   "export interface MapGroup {",

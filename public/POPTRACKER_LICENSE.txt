@@ -1,4 +1,4 @@
-PopTracker map and item image assets are sourced from SoM-Open_Mode-Tracker.
+Bundled PopTracker map/item assets and source data snapshots are sourced from SoM-Open_Mode-Tracker.
 
 MIT License
 

@@ -2,9 +2,9 @@ import type { InventoryId } from "../data/inventoryDefinitions";
 import type { Role } from "../state/worldState";
 import type { OrbRequirement } from "../domain/orbs";
 
-// Vite copies only these referenced PNGs from the authoritative PopTracker package.
+// Accepted PopTracker assets are bundled locally; see public/POPTRACKER_LICENSE.txt.
 const imageUrls = import.meta.glob<string>(
-  "../../../SoM-Open_Mode-Tracker/images/{overworld_map,boy,girl,sprite,boy_overlay,girl_overlay,sprite_overlay,overlay_unknown,gnome,undine,salamando,sylphid,lumina,shade,luna,dryad,gloves,sword,axe,spear,whip,bow,boomerang,javelin,sea_hare_tail,gold_tower_key,midge_mallet,moogle_belt,flammie_drum,water_seed,earth_seed,wind_seed,fire_seed,light_seed,dark_seed,moon_seed,tree_seed,orb}.png",
+  "../assets/poptracker/*.png",
   { eager: true, query: "?url", import: "default" },
 );
 

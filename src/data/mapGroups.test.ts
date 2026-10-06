@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { LOCATION_DEFINITIONS } from "./locationDefinitions";
 import { MAP_GROUPS, MAP_IMAGE_SIZE } from "./mapGroups";
-import raw from "../../../SoM-Open_Mode-Tracker/locations/locations.json?raw";
+import raw from "../../source/poptracker/locations/locations.json?raw";
 
 interface SourceNode {
   name: string;
