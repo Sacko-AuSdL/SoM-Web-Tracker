@@ -1,0 +1,49 @@
+# Dependencies and generated outputs
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.cache/
+.vite/
+
+# Local editors and operating-system files
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Temporary files and logs
+tmp/
+temp/
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+*.bak
+*.orig
+*.rej
+*.log
+*.local
+
+# Environment files and credentials; only sanitized examples may be committed
+.env
+.env.*
+!.env.example
+!.env.*.example
+.npmrc
+secrets/
+credentials/
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Local game ROMs, saves and emulator states are not project source
+*.sfc
+*.smc
+*.srm
+*.sav
+*.state

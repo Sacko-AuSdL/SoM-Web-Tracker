@@ -1,0 +1,103 @@
+import { describe, expect, it } from "vitest";
+import {
+  deriveEffectiveCheckState,
+  emptyManualState,
+  emptyRamState,
+  loadManualState,
+  saveManualState,
+  setManualCompletion,
+} from "./trackerState";
+
+class MemoryStorage implements Storage {
+  private readonly values = new Map<string, string>();
+  get length(): number { return this.values.size; }
+  clear(): void { this.values.clear(); }
+  getItem(key: string): string | null { return this.values.get(key) ?? null; }
+  key(index: number): string | null { return [...this.values.keys()][index] ?? null; }
+  removeItem(key: string): void { this.values.delete(key); }
+  setItem(key: string, value: string): void { this.values.set(key, value); }
+}
+
+describe("generic completion state separation", () => {
+  it("keeps Potos RAM behavior unchanged", () => {
+    const ram = emptyRamState();
+    ram.checks["potos-chest"] = true;
+    expect(deriveEffectiveCheckState("potos-chest", ram, emptyManualState())).toEqual({
+      complete: true,
+      completionSource: "ram",
+    });
+    ram.checks["potos-chest"] = false;
+    expect(deriveEffectiveCheckState("potos-chest", ram, emptyManualState()).complete).toBe(false);
+  });
+
+  it("keeps manual check completion separate from Spear inventory", () => {
+    const ram = emptyRamState();
+    ram.checks["potos-chest"] = false;
+    ram.inventory["weapon-spear"] = false;
+    const manual = setManualCompletion(emptyManualState(), "potos-chest", true);
+    expect(deriveEffectiveCheckState("potos-chest", ram, manual)).toEqual({
+      complete: true,
+      completionSource: "manual",
+    });
+    expect(ram.inventory["weapon-spear"]).toBe(false);
+  });
+
+  it("clears an explicit manual completion", () => {
+    const set = setManualCompletion(emptyManualState(), "mantis-ant", true);
+    const cleared = setManualCompletion(set, "mantis-ant", false);
+    expect(cleared.manualCompletedChecks).toEqual([]);
+  });
+
+  it("persists only the versioned stable check IDs", () => {
+    const storage = new MemoryStorage();
+    const manual = setManualCompletion(
+      setManualCompletion(emptyManualState(), "potos-chest", true),
+      "mantis-ant",
+      true,
+    );
+    saveManualState(storage, manual);
+    expect(loadManualState(storage)).toEqual({
+      version: 1,
+      manualCompletedChecks: ["potos-chest", "mantis-ant"],
+    });
+    expect(JSON.parse(storage.getItem("som-web-tracker:manual-state")!)).toEqual({
+      version: 1,
+      manualCompletedChecks: ["potos-chest", "mantis-ant"],
+    });
+  });
+
+  it("does not persist RAM or execution-pointer session completion", () => {
+    const storage = new MemoryStorage();
+    const ram = emptyRamState();
+    ram.checks["mantis-ant"] = true;
+    ram.inventory["weapon-spear"] = true;
+    saveManualState(storage, emptyManualState());
+    expect(loadManualState(storage)).toEqual(emptyManualState());
+    expect(storage.getItem("som-web-tracker:manual-state")).not.toContain("mantis-ant");
+    expect(storage.getItem("som-web-tracker:manual-state")).not.toContain("weapon-spear");
+  });
+
+  it("migrates Mini v0.1 stable equivalents", () => {
+    const storage = new MemoryStorage();
+    storage.setItem(
+      "som-web-tracker-mini:manual-state:v2",
+      JSON.stringify({ completedChecks: { potosChest: true, mantisAnt: true } }),
+    );
+    expect(loadManualState(storage)).toEqual({
+      version: 1,
+      manualCompletedChecks: ["potos-chest", "mantis-ant"],
+    });
+  });
+
+  it("migrates the legacy Potos completion", () => {
+    const storage = new MemoryStorage();
+    storage.setItem(
+      "som-web-tracker-mvp:manual-state:v1",
+      JSON.stringify({ potosChestComplete: true }),
+    );
+    expect(loadManualState(storage)).toEqual({
+      version: 1,
+      manualCompletedChecks: ["potos-chest"],
+    });
+  });
+});
