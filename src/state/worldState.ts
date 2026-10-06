@@ -1,5 +1,6 @@
 import { ORB_SOURCE_DEFINITIONS } from "../data/sourceWorldData";
-import { connectionId, validConnection, type CannonConnection, type CannonTravelMode, type StartingLocation } from "../domain/cannons";
+import { CANNON_OFFICE_BY_ID, connectionId, validConnection, type CannonNodeId, type CannonConnection, type CannonTravelMode, type StartingLocation } from "../domain/cannons";
+import { PARTY_MODES, type PartyMode } from "../domain/characters";
 import { ELEMENTS, WEAPON_FAMILIES, requirementAllowed,
   type CrystalOrbMode, type OrbId, type OrbRequirement } from "../domain/orbs";
 
@@ -21,27 +22,33 @@ export interface WorldSettings {
   orbMode: CrystalOrbMode;
   cannonMode: CannonTravelMode;
   startingLocation: StartingLocation;
+  startingCharacter: Character | "unresolved";
+  resolvedStartingCharacter: Character | null;
+  partyMode: PartyMode;
+  additionalCharacter: Character | null;
 }
 export interface WorldState {
-  version: 2;
+  version: 3;
   settings: WorldSettings;
   roles: Record<Character, Role>;
   disabledCharacters: Character[];
   orbs: Record<OrbId, OrbRequirement>;
   manualClearedOrbs: OrbId[];
   cannonConnections: CannonConnection[];
+  closedCannonOffices: CannonNodeId[];
 }
 
-const KEY = "som-web-tracker:world-state:v2";
+const KEY = "som-web-tracker:world-state:v3";
+const V2_KEY = "som-web-tracker:world-state:v2";
 const LEGACY_KEY = "som-web-tracker:world-state:v1";
 export function emptyWorldState(): WorldState {
   return {
-    version: 2,
-    settings: { logic: "basic", drumLogic: "normal", roleMode: "normal", roleModeBySlot: {}, fixedRoles: {}, goal: "short", reviveSeedCount: 8, orbMode: "magic-only", cannonMode: "vanilla", startingLocation: "default" },
+    version: 3,
+    settings: { logic: "basic", drumLogic: "normal", roleMode: "normal", roleModeBySlot: {}, fixedRoles: {}, goal: "short", reviveSeedCount: 8, orbMode: "magic-only", cannonMode: "vanilla", startingLocation: "default", startingCharacter: "boy", resolvedStartingCharacter: null, partyMode: "find-both-level-1", additionalCharacter: null },
     roles: { boy: "unknown", girl: "unknown", sprite: "unknown" },
     disabledCharacters: [],
     orbs: Object.fromEntries(ORB_SOURCE_DEFINITIONS.map((orb) => [orb.id, { kind: "unknown" }])) as Record<OrbId, OrbRequirement>,
-    manualClearedOrbs: [], cannonConnections: [],
+    manualClearedOrbs: [], cannonConnections: [], closedCannonOffices: [],
   };
 }
 
@@ -57,8 +64,19 @@ export function setOrbCleared(state: WorldState, id: OrbId, cleared: boolean): W
   return { ...state, manualClearedOrbs: [...marks] };
 }
 export function addCannonConnection(state: WorldState, edge: CannonConnection): WorldState {
-  if (!validConnection(edge) || state.cannonConnections.some((other) => connectionId(other) === connectionId(edge))) return state;
-  return { ...state, cannonConnections: [...state.cannonConnections, { ...edge }] };
+  if (!validConnection(edge)) return state;
+  if (state.cannonConnections.some((other) => connectionId(other) === connectionId(edge)))
+    return state.closedCannonOffices.includes(edge.from) ? setCannonOfficeClosed(state, edge.from, false) : state;
+  return { ...state, cannonConnections: [...state.cannonConnections, { ...edge }],
+    closedCannonOffices: state.closedCannonOffices.filter((id) => id !== edge.from) };
+}
+export type ChaosCannonOfficeState = "unknown" | "open" | "closed";
+export function chaosOfficeState(state: WorldState, id: CannonNodeId): ChaosCannonOfficeState {
+  return state.closedCannonOffices.includes(id) ? "closed" : state.cannonConnections.some((edge) => edge.from === id) ? "open" : "unknown";
+}
+export function setCannonOfficeClosed(state: WorldState, id: CannonNodeId, closed: boolean): WorldState {
+  if (!CANNON_OFFICE_BY_ID.has(id)) return state;
+  return { ...state, closedCannonOffices: closed ? [...new Set([...state.closedCannonOffices, id])] : state.closedCannonOffices.filter((other) => other !== id) };
 }
 export function removeCannonConnection(state: WorldState, id: string): WorldState {
   return { ...state, cannonConnections: state.cannonConnections.filter((edge) => connectionId(edge) !== id) };
@@ -96,8 +114,8 @@ function validRequirement(value: unknown, mode: CrystalOrbMode): value is OrbReq
 export function loadWorldState(storage: Storage): WorldState {
   const fallback = emptyWorldState();
   try {
-    const parsed = JSON.parse(storage.getItem(KEY) ?? storage.getItem(LEGACY_KEY) ?? "null") as (Partial<Omit<WorldState, "version">> & { version?: number }) | null;
-    if ((parsed?.version !== 1 && parsed?.version !== 2) || !parsed.settings) return fallback;
+    const parsed = JSON.parse(storage.getItem(KEY) ?? storage.getItem(V2_KEY) ?? storage.getItem(LEGACY_KEY) ?? "null") as (Partial<Omit<WorldState, "version">> & { version?: number }) | null;
+    if (![1, 2, 3].includes(parsed?.version ?? 0) || !parsed?.settings) return fallback;
     const s = parsed.settings;
     const settings: WorldSettings = {
       logic: s.logic === "restrictive" ? "restrictive" : "basic",
@@ -110,6 +128,10 @@ export function loadWorldState(storage: Storage): WorldState {
       orbMode: s.orbMode === "mixed" || s.orbMode === "weapon-only" ? s.orbMode : "magic-only",
       cannonMode: s.cannonMode === "open" || s.cannonMode === "shuffle" || s.cannonMode === "chaos" ? s.cannonMode : "vanilla",
       startingLocation: s.startingLocation === "kakkara" ? "kakkara" : "default",
+      startingCharacter: CHARACTERS.includes(s.startingCharacter as Character) || s.startingCharacter === "unresolved" ? s.startingCharacter : "boy",
+      resolvedStartingCharacter: CHARACTERS.includes(s.resolvedStartingCharacter as Character) ? s.resolvedStartingCharacter : null,
+      partyMode: Object.hasOwn(PARTY_MODES, s.partyMode ?? "") ? s.partyMode : "find-both-level-1",
+      additionalCharacter: CHARACTERS.includes(s.additionalCharacter as Character) ? s.additionalCharacter : null,
     };
     for (const character of CHARACTERS) {
       const mode = s.roleModeBySlot?.[character];
@@ -132,8 +154,9 @@ export function loadWorldState(storage: Storage): WorldState {
     }
     const manualClearedOrbs = Array.isArray(parsed.manualClearedOrbs) ? [...new Set(parsed.manualClearedOrbs.filter(
       (id): id is OrbId => ORB_SOURCE_DEFINITIONS.some((orb) => orb.id === id)))] : [];
-    let state: WorldState = { version: 2, settings, roles, disabledCharacters, orbs, manualClearedOrbs, cannonConnections: [] };
+    let state: WorldState = { version: 3, settings, roles, disabledCharacters, orbs, manualClearedOrbs, cannonConnections: [], closedCannonOffices: [] };
     if (Array.isArray(parsed.cannonConnections)) for (const edge of parsed.cannonConnections) if (validConnection(edge)) state = addCannonConnection(state, edge);
+    if (Array.isArray(parsed.closedCannonOffices)) state.closedCannonOffices = [...new Set(parsed.closedCannonOffices.filter((id) => CANNON_OFFICE_BY_ID.has(id)))];
     return state;
   } catch { return fallback; }
 }

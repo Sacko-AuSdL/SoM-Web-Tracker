@@ -10,7 +10,6 @@
 .tracker-shell { height: 100dvh; min-height: 0; overflow: hidden; }
 .topbar { min-height: 53px; padding-inline: 14px; }
 .topbar { flex-wrap: wrap; padding-block: 5px; }
-.brand-mark { width: 29px; height: 29px; font-size: 19px; }
 .brand strong { font-family: Manaspace, "Segoe UI", sans-serif; font-size: 19px; }
 .brand div > span { margin-top: 0; }
 .status-pill { padding: 5px 9px; font-size: 11px; }
@@ -118,15 +117,30 @@
 .cannon-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
 .cannon-line { stroke: #80d9fa; stroke-width: 1.5; opacity: .8; filter: drop-shadow(0 1px 1px #03101b); }
 .cannon-line.selected { stroke: #fff6b8; stroke-width: 3; opacity: 1; }
+.cannon-line.highlight { stroke: #fff2ac; stroke-width: 3; opacity: 1; }
+.cannon-line.incoming { stroke: #c6b6ff; stroke-width: 2.5; opacity: 1; }
+.cannon-line.dim { opacity: .2; }
+.cannon-line.closed { stroke-dasharray: 4 4; stroke: #df8b87; }
 .cannon-line-hit { stroke: transparent; stroke-width: 9; pointer-events: stroke; cursor: pointer; }
 .cannon-line-hit:focus-visible { stroke: #ffe7a98c; outline: none; }
 .cannon-pin { width: 19px; height: 19px; margin: 1px; padding: 0; border: 1px solid #9ddeee; border-radius: 50%; background: #194552; color: #e4fbff; font: 12px/1 "Segoe UI", sans-serif; box-shadow: 0 0 0 1px #03101b; }
 .cannon-pin.source { background: #946717; outline: 2px solid #ffe49b; }
+.cannon-pin.highlighted { outline: 2px solid #fff2ac; background: #786320; }
+.cannon-pin.closed { border-color: #ffaaa0; }
+.cannon-closed { position: absolute; right: -3px; bottom: -3px; border-radius: 50%; background: #802e38; color: white; font-size: 11px; line-height: 11px; width: 11px; }
 .cannon-pin.landing { border-radius: 3px; background: #18313dd9; }
 .cannon-pin:disabled { opacity: .6; cursor: default; }
-.cannon-guide { position: absolute; z-index: 8; top: 5px; left: 5px; right: 5px; display: flex; flex-wrap: wrap; align-items: center; gap: 5px; padding: 5px 7px; border: 1px solid #638697; border-radius: 4px; background: #132936ed; font-size: 10px; }
-.cannon-guide button { padding: 3px 5px; font-size: 9px; border: 1px solid #638697; border-radius: 3px; background: #233d4d; color: #eef6f8; }
-.cannon-guide button:disabled { opacity: .5; }
+.cannon-status { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; font-size: 10px; }
+.cannon-status button { padding: 2px 4px; font-size: 9px; border: 1px solid #638697; border-radius: 3px; background: #233d4d; color: #eef6f8; }
+.cannon-status button:disabled { opacity: .5; }
+.map-footnote:has(.cannon-status) { flex-wrap: wrap; }
+.map-footnote:has(.cannon-status) > div { flex-basis: 100%; }
+.availability-badge { position: absolute; top: 0; left: 0; z-index: 2; border-radius: 2px; padding: 0 2px; background: #162d3bef; color: #d5ebf3; font: 9px/11px "Segoe UI", sans-serif; }
+.availability-badge.absent { color: #ffaaa0; }
+.availability-badge.unresolved { border: 1px dotted #c3d4df; }
+.availability-badge.starting { color: #b8f4d1; }
+.import-success { font-size: 11px; color: #b8f4d1; margin: 6px 0 0; }
+.settings-import details { font-size: 10px; margin-top: 6px; }
 .settings-import { margin-bottom: 14px; padding: 9px; border: 1px solid #7197a9; border-radius: 5px; background: #203847; }
 .settings-import label { display: block; font-size: 12px; margin-bottom: 5px; color: #ffe0a0; }
 .settings-import textarea { width: 100%; min-height: 64px; resize: vertical; background: #101f2c; color: #e7f4f7; border: 1px solid #638697; padding: 6px; font: 11px/1.4 monospace; }

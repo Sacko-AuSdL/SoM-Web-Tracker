@@ -5,6 +5,7 @@ import type { RamState } from "../state/trackerState";
 import { CHARACTERS, ROLE_LABELS, effectiveRole, isRoleRandomized, type Character, type Role, type WorldState } from "../state/worldState";
 import type { InventoryMode } from "../state/uiPreferences";
 import { characterRoleOverlay, inventoryImage } from "./assets";
+import { availabilityLabel, characterAvailability, characterPresent } from "../domain/characters";
 
 const categories = [
   { id: "character", title: "Characters" }, { id: "element", title: "Elements" },
@@ -49,24 +50,30 @@ export function ItemPanel({ ram, manualItems, world, mode, onSetMode, onToggleMa
           const id = definition.id;
           const ramValue = ram.inventory[id];
           const manual = manualItems.has(id);
-          const acquired = ramValue === true || manual;
+          const character = category.id === "character" ? id as Character : null;
+          const availability = character ? characterAvailability(world, character) : null;
+          const acquired = character ? characterPresent(world, ram, manualItems, character) : ramValue === true || manual;
           const src = inventoryImage(id);
           const stageId = orbStageId[id];
           const stage = stageId ? ram.inventory[stageId] : null;
-          const character = category.id === "character" ? id as Character : null;
           const randomized = character !== null && isRoleRandomized(world, character);
           const assignedRole = character ? effectiveRole(world, character) : "unknown";
           const showRole = randomized || (character !== null && assignedRole !== character);
-          const status = ramValue === true ? "Auto" : manual ? "Manual" : ramValue === null ? "Unknown" : "Missing";
+          const status = ramValue === true ? "Auto" : ramValue === false && character ? "Missing (RAM)" : manual ? "Manual" :
+            acquired && character ? "Configured" : ramValue === null ? "Unknown" : "Missing";
           return <div key={id} className={`inventory-slot ${acquired ? "acquired" : "unowned"}`}>
             <button type="button" className="item-card" onClick={(event) => randomized && character ? openRolePicker(event, character) : onToggleManualItem(id)}
               aria-label={character ? `${definition.name} slot: ${acquired ? "present" : "not present"}; ${status}. ${randomized ?
                 `Randomized role: ${ROLE_LABELS[assignedRole]}. Choose role` : `${showRole ? `Fixed role: ${ROLE_LABELS[assignedRole]}. ` : ""}${manual ? "Clear" : "Add"} manual mark`}` :
                 `${definition.name}: ${acquired ? "acquired" : "not acquired"}; ${status}. ${manual ? "Clear" : "Add"} manual mark`}
               aria-pressed={randomized ? rolePicker?.slot === character : manual}
-              title={`${definition.name}${character ? " slot" : ""} · ${status}${randomized ? ` · randomized role: ${ROLE_LABELS[assignedRole]}. Click to choose.` :
+              title={`${definition.name}${character ? " slot" : ""} · ${status}${availability ? ` · ${availabilityLabel(availability)}` : ""}${randomized ? ` · randomized role: ${ROLE_LABELS[assignedRole]}. Click to choose.` :
                 `. Click to ${manual ? "clear" : "add"} session mark.`}`}>
               {src && <img src={src} alt="" className="item-icon" />}
+              {availability && <span className={`availability-badge ${availability.disposition}`} data-availability={availability.disposition}
+                aria-label={availabilityLabel(availability)} title={availabilityLabel(availability)}>
+                {availability.disposition === "starting" ? "S" : availability.disposition === "findable" ? "F" : availability.disposition === "absent" ? "×" : "…"}
+              </span>}
               {showRole && <img src={characterRoleOverlay(assignedRole)} alt="" className="role-overlay"
                 data-role={assignedRole} aria-hidden="true" />}
               {stageId && <span className="weapon-stage" title={`${definition.name} orb stage: ${stage ?? "unknown"}`}>{stage ?? "–"}</span>}

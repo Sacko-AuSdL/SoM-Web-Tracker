@@ -32,6 +32,10 @@ export function parseRandomizerSettings(raw: string): ParsedRandomizerSettings {
   if (entries.has("opFlammieDrumInLogic")) entries.set("opFlammieDrumInLogic", entries.get("opFlammieDrumInLogic")!.toLowerCase());
   enumValue("opFlammieDrumInLogic", { yes: "random", true: "random", "1": "random", no: "normal", false: "normal", "0": "normal" }, (v) => { settings.drumLogic = v; });
   enumValue("opStartingLocation", { default: "default", kakkara: "kakkara" }, (v) => { settings.startingLocation = v; });
+  enumValue("opStartChar", { boy: "boy", girl: "girl", sprite: "sprite", random: "unresolved" }, (v) => { settings.startingCharacter = v; });
+  enumValue("opCharacters", { findbothL1: "find-both-level-1", findbothCL: "find-both-current", startboth: "start-both",
+    start1only: "start-one-only", start1find1: "start-one-find-one", find1L1: "find-one-level-1", find1CL: "find-one-current", none: "solo" },
+    (v) => { settings.partyMode = v; });
   enumValue("opLogic", { basic: "basic", restrictive: "restrictive" }, (v) => { settings.logic = v; });
   enumValue("opGoal", { vshort: "short", vlong: "long", mtr: "revive" }, (v) => { settings.goal = v; });
   enumValue("opNumSeeds", Object.fromEntries([1, 2, 3, 4, 5, 6, 7, 8].map((n) => [String(n), String(n)])),
@@ -46,7 +50,7 @@ export function parseRandomizerSettings(raw: string): ParsedRandomizerSettings {
     } else error(`Unrecognized ${key}=${value}; no settings applied.`);
   }
   const recognized = new Set(["version", "mode", "crystalOrbWeaponBreaking", "cannonTravelRandomization", "opFlammieDrumInLogic",
-    "opStartingLocation", "opLogic", "opGoal", "opNumSeeds", "opBoyRole", "opGirlRole", "opSpriteRole"]);
+    "opStartingLocation", "opStartChar", "opCharacters", "spoilerLog", "opStartGold", "opLogic", "opGoal", "opNumSeeds", "opBoyRole", "opGirlRole", "opSpriteRole"]);
   for (const key of entries.keys()) if (!recognized.has(key)) warning(`${key} is not imported; use manual controls for any tracker-relevant effect.`);
   if (settings.startingLocation === "kakkara" && settings.drumLogic !== "random")
     warning("Kakkara is selected but inactive: the source requires Flammie Drum in logic. Effective start is Default.");
@@ -58,5 +62,9 @@ export function parseRandomizerSettings(raw: string): ParsedRandomizerSettings {
 export function applyRandomizerSettings(state: WorldState, parsed: ParsedRandomizerSettings): WorldState {
   if (!parsed.settings) return state;
   const modeAdjusted = setOrbMode(state, parsed.settings.orbMode);
-  return { ...modeAdjusted, settings: parsed.settings };
+  const settings = { ...parsed.settings };
+  if (settings.startingCharacter === state.settings.startingCharacter) settings.resolvedStartingCharacter = state.settings.resolvedStartingCharacter;
+  if (settings.startingCharacter === state.settings.startingCharacter && settings.partyMode === state.settings.partyMode)
+    settings.additionalCharacter = state.settings.additionalCharacter;
+  return { ...modeAdjusted, settings };
 }

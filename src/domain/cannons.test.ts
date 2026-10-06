@@ -41,14 +41,14 @@ describe("authoritative directed Cannon networks", () => {
       getItem: (key) => entries.get(key) ?? null, setItem: (key, value) => { entries.set(key, value); } };
     entries.set("som-web-tracker:world-state:v1", JSON.stringify({ ...emptyWorldState(), version: 1, settings: { drumLogic: "random", roleMode: "random" } }));
     let state = loadWorldState(storage);
-    expect(state.version).toBe(2);
+    expect(state.version).toBe(3);
     expect(state.settings.cannonMode).toBe("vanilla");
     state.settings.startingLocation = "kakkara";
     state = setOrbCleared(addCannonConnection(state, { from: "kakkara", to: "potos" }), "uf_orb", true);
     saveWorldState(storage, state);
     expect(loadWorldState(storage)).toEqual(state);
-    expect(entries.get("som-web-tracker:world-state:v2")).not.toContain("inventory");
-    entries.set("som-web-tracker:world-state:v2", JSON.stringify({ ...state, cannonConnections: [...state.cannonConnections, ...state.cannonConnections, { from: "unknown", to: "potos" }, { from: "kakkara", to: "kakkara" }] }));
+    expect(entries.get("som-web-tracker:world-state:v3")).not.toContain("inventory");
+    entries.set("som-web-tracker:world-state:v3", JSON.stringify({ ...state, cannonConnections: [...state.cannonConnections, ...state.cannonConnections, { from: "unknown", to: "potos" }, { from: "kakkara", to: "kakkara" }] }));
     expect(loadWorldState(storage).cannonConnections).toEqual(state.cannonConnections);
     expect(validConnection({ from: "waterPalace", to: "potos" })).toBe(false);
   });

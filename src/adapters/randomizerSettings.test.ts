@@ -7,6 +7,18 @@ import { effectiveStartingLocation } from "../logic/travel";
 // with changed values from local OpenWorldSettings.cs (Randomizer 1.49).
 const prefix = "version=1.49 mode=open";
 describe("Randomizer settings adapter", () => {
+  it("silently ignores spoilerLog and opStartGold", () => {
+    expect(parseRandomizerSettings(`${prefix} spoilerLog=yes opStartGold=500`).diagnostics).toEqual([]);
+  });
+  it.each(["opCharacters=bogus", "opStartChar=warrior"])("rejects malformed character configuration: %s", (option) => {
+    expect(parseRandomizerSettings(`${prefix} ${option}`).settings).toBeNull();
+  });
+  it("preserves compatible manually identified availability, but resets it when imported configuration changes", () => {
+    const state = applyRandomizerSettings(emptyWorldState(), parseRandomizerSettings(`${prefix} opCharacters=find1L1`));
+    state.settings.additionalCharacter = "girl";
+    expect(applyRandomizerSettings(state, parseRandomizerSettings(`${prefix} opCharacters=find1L1`)).settings.additionalCharacter).toBe("girl");
+    expect(applyRandomizerSettings(state, parseRandomizerSettings(`${prefix} opCharacters=start1only`)).settings.additionalCharacter).toBeNull();
+  });
   it("resets omitted options to source defaults, including canonical per-slot roles", () => {
     const parsed = parseRandomizerSettings(prefix);
     expect(parsed.settings).toMatchObject({ orbMode: "magic-only", cannonMode: "vanilla", drumLogic: "normal", startingLocation: "default", logic: "basic", goal: "short",

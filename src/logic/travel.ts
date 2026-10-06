@@ -34,6 +34,7 @@ export function reachableRegions(world: WorldState, hasFlammie: boolean, upperLa
     changed = improve("upperLand", combine(regions.matango, upperLandGate)) || changed;
     changed = improve("matango", combine(regions.upperLand, upperLandGate)) || changed;
     for (const edge of cannonNetwork(world.settings.cannonMode, world.cannonConnections)) {
+      if (world.settings.cannonMode === "chaos" && world.closedCannonOffices.includes(edge.from)) continue;
       const source = CANNON_OFFICE_BY_ID.get(edge.from)!, target = CANNON_TARGET_BY_ID.get(edge.to)!;
       changed = improve(target.region, regions[source.region]) || changed;
     }

@@ -16,7 +16,7 @@ import { ItemPanel } from "./ui/ItemPanel";
 import { SettingsPanel } from "./ui/SettingsPanel";
 import { WorldMap } from "./ui/WorldMap";
 import { emptyWorldState, loadWorldState, saveWorldState, setOrbMode, setOrbRequirement, setRoleIdentity, setOrbCleared,
-  addCannonConnection, removeCannonConnection, replaceCannonConnection, clearCannonConnections,
+  addCannonConnection, removeCannonConnection, replaceCannonConnection, clearCannonConnections, setCannonOfficeClosed,
   type Character, type Role, type WorldSettings, type WorldState } from "./state/worldState";
 import { loadUiPreferences, saveUiPreferences, type DungeonMode, type InventoryMode } from "./state/uiPreferences";
 import { applyRandomizerSettings } from "./adapters/randomizerSettings";
@@ -65,6 +65,8 @@ export default function App() {
   const selectDevice = (device: string) => { void autotracker.selectDevice(device); };
   const updateSetting = <K extends keyof WorldSettings>(key: K, value: WorldSettings[K]) =>
     setWorld((current) => ({ ...current, settings: { ...current.settings, [key]: value,
+      ...(key === "startingCharacter" || key === "partyMode" || key === "resolvedStartingCharacter" ? { additionalCharacter: null } : {}),
+      ...(key === "startingCharacter" ? { resolvedStartingCharacter: null } : {}),
       ...(key === "roleMode" ? { roleModeBySlot: {}, fixedRoles: {} } : {}) } }));
   const toggleDisabledCharacter = (character: Character) => setWorld((current) => ({
     ...current, disabledCharacters: current.disabledCharacters.includes(character) ?
@@ -79,6 +81,7 @@ export default function App() {
     if (action.kind === "add") return addCannonConnection(current, action.edge);
     if (action.kind === "remove") return removeCannonConnection(current, action.id);
     if (action.kind === "replace") return replaceCannonConnection(current, action.id, action.edge);
+    if (action.kind === "closed") return setCannonOfficeClosed(current, action.office, action.closed);
     return clearCannonConnections(current);
   });
   const sniConnected = snapshot.sni.phase === "attached";
@@ -88,7 +91,7 @@ export default function App() {
   return (
     <div className={`tracker-shell inventory-${ui.inventoryMode}`}>
       <header className="topbar">
-        <div className="brand"><span className="brand-mark" aria-hidden="true">✦</span>
+        <div className="brand">
           <div><strong>Secret of Mana</strong><span>Open Mode Tracker</span></div></div>
         <div className="top-status">
           <span className="progress-pill" aria-label={`Checks: ${progress.completed} of ${progress.total} completed`}>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FocusEvent, type PointerEvent, type WheelEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FocusEvent, type PointerEvent, type WheelEvent } from "react";
 import { MAP_IMAGE_SIZE } from "../data/mapGroups";
 import { MAP_AREAS } from "../data/mapAreas";
 import { ORB_DISPLAY_OFFSET, UPPER_LAND_ORB_POSITION } from "../data/orbLayout";
@@ -42,9 +42,12 @@ export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck,
   const [hovered, setHovered] = useState<OpenMarker>(null);
   const [pinned, setPinned] = useState<OpenMarker>(null);
   const [cannonsVisible, setCannonsVisible] = useState(false);
-  const [cannonsEditing, setCannonsEditing] = useState(false);
-  const manualCannonMode = world.settings.cannonMode === "shuffle" || world.settings.cannonMode === "chaos";
-  const cannonEditActive = cannonsVisible && cannonsEditing && manualCannonMode;
+  const [cannonEditActive, setCannonEditActive] = useState(false);
+  const [cannonFooter, setCannonFooter] = useState<HTMLDivElement | null>(null);
+  const editingChanged = useCallback((active: boolean) => {
+    setCannonEditActive(active);
+    if (active) { setPinned(null); setHovered(null); }
+  }, []);
   const open = pinned ?? hovered;
   const context = createLogicContext(ram, manualItems, world);
   useEffect(() => {
@@ -115,8 +118,6 @@ export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck,
           {layer[0].toUpperCase() + layer.slice(1)} {layers[layer] ? "✓" : "○"}</button>)}
         <button type="button" className={cannonsVisible ? "active" : ""} aria-pressed={cannonsVisible}
           onClick={() => setCannonsVisible((value) => !value)}>Cannons {cannonsVisible ? "✓" : "○"}</button>
-        {cannonsVisible && manualCannonMode && <button type="button" className={cannonsEditing ? "active" : ""} aria-pressed={cannonsEditing}
-          onClick={() => { setCannonsEditing((value) => !value); setPinned(null); setHovered(null); }}>Edit Cannons</button>}
       </div>
       <div className="map-controls" aria-label="Map controls">
         <button type="button" onClick={() => zoomAt(1.25, { x: size.width / 2, y: size.height / 2 })} aria-label="Zoom in">+</button>
@@ -129,7 +130,7 @@ export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck,
       <img className="map-image" src={overworldImage} alt="Secret of Mana overworld" draggable={false}
         style={{ width: MAP_IMAGE_SIZE.width * view.scale, height: MAP_IMAGE_SIZE.height * view.scale,
           left: view.x, top: view.y, imageRendering: view.scale >= 1 ? "pixelated" : "auto" }} />
-      {cannonsVisible && size.width > 0 && <CannonLayer world={world} view={view} editing={cannonsEditing && manualCannonMode}
+      {cannonsVisible && size.width > 0 && <CannonLayer world={world} view={view} footerElement={cannonFooter} onEditingChange={editingChanged}
         onAction={(action) => onCannonAction?.(action)} />}
       {/* Area, Orb, hint and directed Cannon overlays share one transform. */}
       {layers.checks && size.width > 0 && MAP_AREAS.map((area) => {
@@ -221,6 +222,6 @@ export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck,
         </div>;
       })}
     </div>
-    <div className="map-footnote"><span>Drag · scroll to zoom · hover or click a marker</span><span>{MAP_AREAS.length} areas · {ORB_SOURCE_DEFINITIONS.length} orbs</span></div>
+    <div className="map-footnote"><div ref={setCannonFooter} /><span>Drag · scroll to zoom · hover or click a marker</span><span>{MAP_AREAS.length} areas · {ORB_SOURCE_DEFINITIONS.length} orbs</span></div>
   </section>;
 }

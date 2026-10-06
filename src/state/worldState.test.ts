@@ -51,7 +51,7 @@ describe("PopTracker character role identities", () => {
     state.settings.roleModeBySlot = { boy: "random" };
     saveWorldState(storage, state);
     expect(loadWorldState(storage)).toEqual(state);
-    expect(storage.getItem("som-web-tracker:world-state:v2")).not.toContain("inventory");
+    expect(storage.getItem("som-web-tracker:world-state:v3")).not.toContain("inventory");
   });
   it("loads older saved global role mode without per-slot overrides", () => {
     const storage = new MemoryStorage();

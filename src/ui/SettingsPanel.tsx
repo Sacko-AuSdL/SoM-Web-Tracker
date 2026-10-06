@@ -6,6 +6,7 @@ import { useState } from "react";
 import { parseRandomizerSettings, type ParsedRandomizerSettings, type SettingsDiagnostic } from "../adapters/randomizerSettings";
 import { CHARACTERS, isRoleRandomized } from "../state/worldState";
 import { effectiveStartingLocation } from "../logic/travel";
+import { PARTY_MODES, needsAdditionalIdentity, resolvedStart, type PartyMode } from "../domain/characters";
 
 interface SettingsPanelProps {
   sni: SniStatus;
@@ -24,6 +25,8 @@ export function SettingsPanel({ sni, onSelectDevice, world, onUpdateSetting, onS
   dungeonMode, onSetDungeonMode, onClose, onImportSettings }: SettingsPanelProps) {
   const [raw, setRaw] = useState("");
   const [diagnostics, setDiagnostics] = useState<SettingsDiagnostic[]>([]);
+  const [imported, setImported] = useState(false);
+  const start = resolvedStart(world);
   return (
     <div className="modal-layer">
       <button type="button" className="modal-scrim" aria-label="Close settings" onClick={onClose} />
@@ -37,12 +40,14 @@ export function SettingsPanel({ sni, onSelectDevice, world, onUpdateSetting, onS
               placeholder="Paste the Randomizer's version=… mode=open … options string" />
             <button type="button" onClick={() => {
               const parsed = parseRandomizerSettings(raw);
-              setDiagnostics([...parsed.diagnostics, ...(parsed.settings ? [{ level: "warning" as const,
-                message: "Settings applied. Manual overrides remain available; no seed-specific routes or Orb requirements were imported." }] : [])]);
+              setDiagnostics(parsed.diagnostics);
+              setImported(parsed.settings !== null);
               if (parsed.settings) onImportSettings(parsed);
             }}>Import / Apply</button>
-            <ul role="status">{diagnostics.map((diagnostic, index) => <li key={index}
-              className={diagnostic.level === "error" ? "import-error" : ""}>{diagnostic.message}</li>)}</ul>
+            {imported && <p className="import-success" role="status">Settings imported successfully.</p>}
+            {diagnostics.some((d) => d.level === "error") && <ul role="alert">{diagnostics.filter((d) => d.level === "error").map((d, index) => <li className="import-error" key={index}>{d.message}</li>)}</ul>}
+            {diagnostics.some((d) => d.level === "warning") && <details><summary>Parser diagnostics</summary>
+              <ul>{diagnostics.filter((d) => d.level === "warning").map((d, index) => <li key={index}>{d.message}</li>)}</ul></details>}
           </section>
           <div className="settings-grid">
             <label>Logic<select value={world.settings.logic} onChange={(event) => onUpdateSetting("logic", event.target.value as WorldSettings["logic"])}>
@@ -63,6 +68,20 @@ export function SettingsPanel({ sni, onSelectDevice, world, onUpdateSetting, onS
             <label>Starting Location<select value={world.settings.startingLocation} onChange={(event) => onUpdateSetting("startingLocation", event.target.value as WorldSettings["startingLocation"])}>
               <option value="default">Default</option><option value="kakkara">Kakkara</option>
             </select></label>
+            <label>Starting Character<select value={world.settings.startingCharacter} onChange={(event) => onUpdateSetting("startingCharacter", event.target.value as WorldSettings["startingCharacter"])}>
+              {CHARACTERS.map((slot) => <option key={slot} value={slot}>{slot}</option>)}<option value="unresolved">Random · seed identity unresolved</option>
+            </select></label>
+            <label>Additional Characters<select value={world.settings.partyMode} onChange={(event) => onUpdateSetting("partyMode", event.target.value as PartyMode)}>
+              {Object.entries(PARTY_MODES).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select></label>
+            {world.settings.startingCharacter === "unresolved" && <label>Identify starting slot<select value={world.settings.resolvedStartingCharacter ?? ""}
+              onChange={(event) => onUpdateSetting("resolvedStartingCharacter", event.target.value as Character || null)}>
+              <option value="">Unresolved</option>{CHARACTERS.map((slot) => <option key={slot} value={slot}>{slot}</option>)}
+            </select></label>}
+            {needsAdditionalIdentity(world.settings.partyMode) && <label>Identify {world.settings.partyMode.startsWith("start-") ? "additional starting" : "findable"} slot<select
+              disabled={!start} value={world.settings.additionalCharacter ?? ""} onChange={(event) => onUpdateSetting("additionalCharacter", event.target.value as Character || null)}>
+              <option value="">Seed identity unresolved</option>{CHARACTERS.filter((slot) => slot !== start).map((slot) => <option key={slot} value={slot}>{slot}</option>)}
+            </select></label>}
             <label>Dungeon Map<select value={dungeonMode} onChange={(event) => onSetDungeonMode(event.target.value as DungeonMode)}>
               <option value="auto">Auto (verified maps only)</option><option value="hidden">Hidden</option>
             </select></label>

@@ -83,7 +83,7 @@ describe("Settings import controls", () => {
   it("shows random ? and fixed cross-slot overlays without changing character ownership", () => {
     const world = applyRandomizerSettings(emptyWorldState(), parseRandomizerSettings("version=1.49 mode=open opBoyRole=random opGirlRole=OGsprite"));
     render(<ItemPanel world={world} ram={emptyRamState()} manualItems={new Set()} mode="compact" onSetMode={vi.fn()} onToggleManualItem={vi.fn()} onSetRole={vi.fn()} />);
-    expect(screen.getByRole("button", { name: /Boy slot: not present/ }).querySelector(".role-overlay")?.getAttribute("data-role")).toBe("unknown");
+    expect(screen.getByRole("button", { name: /Boy slot: present/ }).querySelector(".role-overlay")?.getAttribute("data-role")).toBe("unknown");
     expect(screen.getByRole("button", { name: /Girl slot: not present/ }).querySelector(".role-overlay")?.getAttribute("data-role")).toBe("sprite");
     expect(screen.getByRole("button", { name: /Sprite slot: not present/ }).querySelector(".role-overlay")).toBeNull();
   });
@@ -96,11 +96,14 @@ describe("directed Cannon map editing", () => {
     fireEvent.click(screen.getByRole("button", { name: /Potos: reachable/ }));
     expect(screen.getByRole("heading", { name: "Potos" })).toBeDefined();
     fireEvent.click(screen.getByRole("button", { name: "Cannons ○" }));
-    fireEvent.click(screen.getByRole("button", { name: "Edit Cannons" }));
+    expect(screen.queryByRole("button", { name: "Edit Cannons" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Potos Cannon Office" }));
     expect(screen.queryByRole("heading", { name: "Potos" })).toBeNull();
     expect(document.querySelector(".orb-anchor")?.hasAttribute("inert")).toBe(true);
     expect(document.querySelector(".cannon-anchor")?.hasAttribute("inert")).toBe(false);
-    fireEvent.click(screen.getByRole("button", { name: "Edit Cannons" }));
+    expect(document.querySelector(".map-viewport .cannon-status")).toBeNull();
+    expect(document.querySelector(".map-footnote .cannon-status")).not.toBeNull();
+    fireEvent.keyDown(window, { key: "Escape" });
     expect(document.querySelector(".orb-anchor")?.hasAttribute("inert")).toBe(false);
   });
   it("adds, replaces, selects/removes and clears routes without adding reverse edges", () => {
@@ -108,7 +111,7 @@ describe("directed Cannon map editing", () => {
     const actions: CannonAction[] = [];
     function Harness() {
       const [world, setWorld] = useState(initial);
-      return <CannonLayer world={world} view={{ scale: 0.2, x: 0, y: 0 }} editing onAction={(action) => {
+      return <CannonLayer world={world} view={{ scale: 0.2, x: 0, y: 0 }} onAction={(action) => {
         actions.push(action);
         setWorld((s) => action.kind === "add" ? addCannonConnection(s, action.edge) : action.kind === "remove" ? removeCannonConnection(s, action.id) : action.kind === "replace" ? replaceCannonConnection(s, action.id, action.edge) : clearCannonConnections(s));
       }} />;
@@ -135,16 +138,16 @@ describe("directed Cannon map editing", () => {
   it("uses the shared map transform for pins and arrow endpoints on pan and zoom", () => {
     const world = addCannonConnection(emptyWorldState(), { from: "kakkara", to: "iceCountry" }); world.settings.cannonMode = "chaos";
     let view = { scale: 0.2, x: 0, y: 0 };
-    const { rerender } = render(<CannonLayer world={world} view={view} editing={false} onAction={vi.fn()} />);
+    const { rerender } = render(<CannonLayer world={world} view={view} onAction={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Kakkara Cannon Office" }));
     const line = document.querySelector(".cannon-line")!;
     const x = Number(line.getAttribute("x1")), y = Number(line.getAttribute("y1"));
     view = { ...view, x: 55, y: -21 };
-    rerender(<CannonLayer world={world} view={view} editing={false} onAction={vi.fn()} />);
+    rerender(<CannonLayer world={world} view={view} onAction={vi.fn()} />);
     expect(Number(line.getAttribute("x1"))).toBeCloseTo(x + 55);
     expect(Number(line.getAttribute("y1"))).toBeCloseTo(y - 21);
     view = { scale: 0.5, x: 55, y: -21 };
-    rerender(<CannonLayer world={world} view={view} editing={false} onAction={vi.fn()} />);
+    rerender(<CannonLayer world={world} view={view} onAction={vi.fn()} />);
     const point = CANNON_OFFICE_BY_ID.get("kakkara")!, transformed = worldToScreen(view, point.x, point.y, 18, 16);
     const pin = screen.getByRole("button", { name: "Kakkara Cannon Office" }).parentElement!;
     expect(Number.parseFloat(pin.style.left)).toBeCloseTo(transformed.left);
@@ -152,12 +155,12 @@ describe("directed Cannon map editing", () => {
     expect(Math.hypot(Number(line.getAttribute("x1")) - transformed.left, Number(line.getAttribute("y1")) - transformed.top)).toBeCloseTo(13);
     expect(line.getAttribute("marker-end")).toMatch(/url\(#cannon-arrow-/);
   });
-  it("shows only one office's eight outgoing Open routes, never the 56-edge full-map mesh", () => {
+  it("keeps Open's network in logic without route visualization or selection UI", () => {
     const world = emptyWorldState(); world.settings.cannonMode = "open";
-    render(<CannonLayer world={world} view={{ scale: 0.2, x: 0, y: 0 }} editing={false} onAction={vi.fn()} />);
+    render(<CannonLayer world={world} view={{ scale: 0.2, x: 0, y: 0 }} onAction={vi.fn()} />);
     expect(document.querySelectorAll(".cannon-line")).toHaveLength(0);
-    fireEvent.click(screen.getByRole("button", { name: "Potos Cannon Office" }));
-    expect(document.querySelectorAll(".cannon-line")).toHaveLength(8);
+    expect(screen.queryByRole("button", { name: "Potos Cannon Office" })).toBeNull();
+    expect(screen.queryByRole("status")).toBeNull();
     expect(screen.queryByRole("button", { name: "Clear seed network" })).toBeNull();
   });
 });

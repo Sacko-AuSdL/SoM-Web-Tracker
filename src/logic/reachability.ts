@@ -6,6 +6,7 @@ import { type Element, type OrbId, type OrbRequirement } from "../domain/orbs";
 import { deriveEffectiveCheckState, type PersistentManualState, type RamState } from "../state/trackerState";
 import { CHARACTERS, effectiveRole, isRoleRandomized, type Character, type WorldState } from "../state/worldState";
 import { CHECK_REGION } from "../domain/cannons";
+import { characterAvailability, characterPresent } from "../domain/characters";
 import { reachableRegions, usesRegionTravel, type TravelAccess } from "./travel";
 
 export type AccessLevel = "unreachable" | "checkable" | "unknown" | "reachable";
@@ -31,7 +32,7 @@ function item(context: LogicContext, id: InventoryId): boolean {
   return context.manualItems.has(id) || context.ram.inventory[id] === true;
 }
 function hasCharacter(context: LogicContext, character: Character): boolean {
-  return !context.world.disabledCharacters.includes(character) && item(context, character);
+  return characterPresent(context.world, context.ram, context.manualItems, character);
 }
 function hasRole(context: LogicContext, role: Character): boolean {
   return CHARACTERS.some((character) => hasCharacter(context, character) &&
@@ -39,7 +40,7 @@ function hasRole(context: LogicContext, role: Character): boolean {
 }
 function roleAvailable(context: LogicContext, role: Character): boolean {
   return CHARACTERS.some((character) =>
-    !context.world.disabledCharacters.includes(character) &&
+    (context.ram.inventory[character] === true || characterAvailability(context.world, character).exists !== "no") &&
     (!isRoleRandomized(context.world, character) ? effectiveRole(context.world, character) === role :
       context.world.roles[character] === "unknown" || context.world.roles[character] === role));
 }
