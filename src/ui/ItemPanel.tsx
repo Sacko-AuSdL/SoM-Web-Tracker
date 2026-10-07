@@ -34,17 +34,19 @@ export function ItemPanel({ ram, manualItems, world, mode, onSetMode, onToggleMa
       top: Math.max(8, Math.min(rect.top, window.innerHeight - 240)),
     });
   };
-  return <aside className="item-panel" aria-label="Inventory">
+  return <aside className="item-panel" data-layout={mode} aria-label="Inventory">
     <div className="panel-heading"><div><span className="eyebrow">YOUR PARTY</span><h2>Inventory</h2></div>
       <div className="inventory-mode-toggle" aria-label="Inventory layout">
-        <button type="button" aria-label="Normal inventory" aria-pressed={mode === "normal"}
+        <button type="button" aria-label="Normal inventory" title="Normal" aria-pressed={mode === "normal"}
           onClick={() => onSetMode("normal")}>N</button>
-        <button type="button" aria-label="Compact inventory" aria-pressed={mode === "compact"}
+        <button type="button" aria-label="Compact inventory" title="Compact" aria-pressed={mode === "compact"}
           onClick={() => onSetMode("compact")}>C</button>
+        <button type="button" aria-label="Square inventory" title="Square" aria-pressed={mode === "square"}
+          onClick={() => onSetMode("square")}>S</button>
       </div>
     </div>
     <div className="item-scroll">
-      {categories.map((category) => <section className="item-category" key={category.id} aria-label={category.title}>
+      {categories.map((category) => <section className="item-category" data-category={category.id} key={category.id} aria-label={category.title}>
         <h3>{category.title}</h3>
         <div className="item-grid">{INVENTORY_DEFINITIONS.filter((item) => item.category === category.id).map((definition) => {
           const id = definition.id;
@@ -79,6 +81,7 @@ export function ItemPanel({ ram, manualItems, world, mode, onSetMode, onToggleMa
               {stageId && <span className="weapon-stage" title={`${definition.name} orb stage: ${stage ?? "unknown"}`}>{stage ?? "–"}</span>}
               {manual && <span className="manual-indicator" aria-hidden="true">M</span>}
             </button>
+            {mode === "square" && character && <span className="square-character-label">{definition.name}</span>}
           </div>;
         })}</div>
       </section>)}

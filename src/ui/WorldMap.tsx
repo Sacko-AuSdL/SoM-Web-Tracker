@@ -46,8 +46,11 @@ export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck,
   const [cannonFooter, setCannonFooter] = useState<HTMLDivElement | null>(null);
   const editingChanged = useCallback((active: boolean) => {
     setCannonEditActive(active);
-    if (active) { setPinned(null); setHovered(null); }
-  }, []);
+    if (active) {
+      setPinned(null); setHovered(null);
+      setView(clampView({ scale: fitScale(size), x: 0, y: 0 }, size));
+    }
+  }, [size]);
   const open = pinned ?? hovered;
   const officeOpened = useCallback(() => { setPinned(null); setHovered(null); }, []);
   const context = createLogicContext(ram, manualItems, world);
@@ -144,7 +147,7 @@ export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck,
           <button type="button" className={`map-pin pin-${progress.status}`} onClick={() => togglePin("checks", area.id)}
             aria-label={`${area.name}: ${progress.status}, ${progress.completed} of ${progress.total} complete`}
             aria-expanded={isOpen("checks", area.id)} title={area.name}>
-            <span aria-hidden="true">{progress.status === "completed" ? "✓" : progress.status === "unknown" ? "?" :
+            <span className="map-symbol" aria-hidden="true">{progress.status === "completed" ? "✓" : progress.status === "unknown" ? "?" :
               progress.status === "unreachable" ? "×" : progress.status === "partial" ? "◐" : "+"}</span>
           </button>
           {isOpen("checks", area.id) && <div className="map-popover" style={popupStyle(coords.left, coords.top)}>

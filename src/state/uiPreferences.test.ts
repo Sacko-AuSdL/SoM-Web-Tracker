@@ -11,6 +11,15 @@ class MemoryStorage implements Storage {
   setItem(key: string, value: string): void { this.values.set(key, value); }
 }
 describe("UI-only preferences", () => {
+  it.each(["normal", "compact", "square"] as const)("preserves %s using the existing v1 preference key", (inventoryMode) => {
+    const storage = new MemoryStorage();
+    storage.setItem("som-web-tracker:ui-preferences:v1", JSON.stringify({ version: 1, inventoryMode, dungeonMode: "hidden" }));
+    const loaded = loadUiPreferences(storage);
+    expect(loaded).toEqual({ version: 1, inventoryMode, dungeonMode: "hidden" });
+    saveUiPreferences(storage, loaded);
+    expect(loadUiPreferences(storage)).toEqual(loaded);
+    expect(storage.length).toBe(1);
+  });
   it("persists Normal/Compact and Auto/Hidden separately from tracker state", () => {
     const storage = new MemoryStorage();
     const prefs = { ...emptyUiPreferences(), inventoryMode: "compact" as const, dungeonMode: "hidden" as const };

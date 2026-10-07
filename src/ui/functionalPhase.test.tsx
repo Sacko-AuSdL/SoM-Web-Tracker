@@ -89,6 +89,21 @@ describe("Settings import controls", () => {
   });
 });
 describe("directed Cannon map editing", () => {
+  it("route inspection dismisses gameplay hover and pinned popups before a route click", () => {
+    vi.stubGlobal("ResizeObserver", class { constructor(private callback: ResizeObserverCallback) {} observe() { this.callback([{ contentRect: { width: 800, height: 370 } } as ResizeObserverEntry], this as unknown as ResizeObserver); } disconnect() {} });
+    const world = addCannonConnection(emptyWorldState(), { from: "kakkara", to: "waterPalace" }); world.settings.cannonMode = "shuffle";
+    const action = vi.fn();
+    render(<WorldMap world={world} ram={emptyRamState()} manual={emptyManualState()} manualItems={new Set()} onSelectOrb={vi.fn()} onToggleManualCheck={vi.fn()} onCannonAction={action} />);
+    fireEvent.click(screen.getByRole("button", { name: "Cannons ○" }));
+    const orb = screen.getByRole("button", { name: /Upper Land Forest Orb:/ });
+    fireEvent.mouseEnter(orb); fireEvent.click(orb);
+    expect(screen.getByRole("heading", { name: "Upper Land Forest Orb" })).toBeDefined();
+    const route = screen.getByRole("button", { name: "Cannon route Kakkara to Water Palace" });
+    fireEvent.focus(route);
+    expect(screen.queryByRole("heading", { name: "Upper Land Forest Orb" })).toBeNull();
+    fireEvent.click(route);
+    expect(action).toHaveBeenCalledWith({ kind: "remove", id: "kakkara:waterPalace" });
+  });
   it("makes gameplay markers passive only during Cannon editing so they cannot intercept route clicks", () => {
     vi.stubGlobal("ResizeObserver", class { constructor(private callback: ResizeObserverCallback) {} observe() { this.callback([{ contentRect: { width: 800, height: 370 } } as ResizeObserverEntry], this as unknown as ResizeObserver); } disconnect() {} });
     const world = emptyWorldState(); world.settings.cannonMode = "shuffle";
@@ -125,7 +140,9 @@ describe("directed Cannon map editing", () => {
     expect(screen.getByRole("button", { name: "Cannon route Kakkara to Ice Country" })).toBeDefined();
     expect(document.querySelectorAll(".cannon-line")).toHaveLength(1);
     expect(actions[0]).toEqual({ kind: "add", edge: { from: "kakkara", to: "iceCountry" } });
+    fireEvent.mouseEnter(screen.getByRole("button", { name: "Kakkara Cannon Office" }));
     fireEvent.click(screen.getByRole("button", { name: "Replace route to Ice Country" }));
+    expect(screen.queryByRole("region", { name: "Kakkara Cannon controls" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Water Palace Cannon Landing" }));
     expect(screen.queryByRole("button", { name: "Cannon route Kakkara to Ice Country" })).toBeNull();
     const route = screen.getByRole("button", { name: "Cannon route Kakkara to Water Palace" });
@@ -133,7 +150,7 @@ describe("directed Cannon map editing", () => {
     expect(document.querySelectorAll(".cannon-line")).toHaveLength(0);
     fireEvent.click(screen.getByRole("button", { name: "Potos Cannon Office" }));
     fireEvent.click(screen.getByRole("button", { name: "Add route" }));
-    fireEvent.change(screen.getByRole("combobox", { name: "Destination from Potos" }), { target: { value: "kakkara" } });
+    fireEvent.click(screen.getByRole("button", { name: "Kakkara Cannon Office" }));
     fireEvent.click(screen.getByRole("button", { name: "Cannon route Potos to Kakkara" }));
     expect(document.querySelectorAll(".cannon-line")).toHaveLength(0);
     expect(document.querySelector(".cannon-status button")).toBeNull();

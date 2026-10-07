@@ -126,7 +126,7 @@ export default function App() {
       <footer className="footerbar">
         <div><button type="button" onClick={() => setSettingsOpen(true)}>Settings</button>
           <button type="button" onClick={() => setDebugOpen((open) => !open)} aria-expanded={debugOpen}>Debug</button></div>
-        <div className="footer-meta"><a href="/POPTRACKER_LICENSE.txt" target="_blank" rel="noreferrer">PopTracker assets · MIT</a>
+        <div className="footer-meta"><a href="/POPTRACKER_LICENSE.txt" target="_blank" rel="noreferrer">PopTracker source notice</a>
           <a href="/fonts/license.txt" target="_blank" rel="noreferrer">Manaspace · zone38</a></div>
       </footer>
 
@@ -135,6 +135,8 @@ export default function App() {
         onUpdateSetting={updateSetting} onSetOrbMode={changeOrbMode} onToggleDisabledCharacter={toggleDisabledCharacter}
         onImportSettings={(parsed) => setWorld((current) => applyRandomizerSettings(current, parsed))}
         dungeonMode={ui.dungeonMode}
+        inventoryMode={ui.inventoryMode}
+        onSetInventoryMode={(mode) => setUi((current) => ({ ...current, inventoryMode: mode }))}
         onSetDungeonMode={(mode: DungeonMode) => setUi((current) => ({ ...current, dungeonMode: mode }))}
         onClose={() => setSettingsOpen(false)} />}
       {debugOpen && <DebugPanel snapshot={snapshot} onClose={() => setDebugOpen(false)} />}

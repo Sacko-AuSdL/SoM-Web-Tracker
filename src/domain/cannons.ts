@@ -18,8 +18,7 @@ export const CANNON_OFFICES = [
   { id: "kakkara", name: "Kakkara", region: "kakkara", x: 0x2B * 16, y: 0x5D * 16 },
   { id: "matango", name: "Matango", region: "matango", x: 0x7A * 16, y: 0x8B * 16 },
   { id: "potos", name: "Potos", region: "potos", x: 0x9B * 16, y: 0xBF * 16 },
-  // Display-only leftward adjustment; the source travel region is unchanged.
-  { id: "gaiasNavel", name: "Gaia's Navel", region: "potos", x: 0x7F * 16 - 112, y: 0xC2 * 16, screenOffset: { x: -6, y: 16 } },
+  { id: "gaiasNavel", name: "Gaia's Navel", region: "potos", x: 0x7F * 16, y: 0xC2 * 16 },
 ] as const satisfies readonly (CannonPoint & { id: CannonNodeId })[];
 // An office button is also its home landing-region target. Water Palace and
 // Pandora have no office, but are valid landing targets in the source model.

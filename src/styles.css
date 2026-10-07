@@ -32,6 +32,7 @@
 .inventory-compact .item-panel .panel-heading { padding: 5px; min-height: 43px; }
 .inventory-compact .item-panel .eyebrow { display: none; }
 .inventory-compact .item-panel h2 { font-size: 12px; }
+.inventory-compact .inventory-mode-toggle button { width: 17px; }
 .inventory-compact .item-scroll { padding: 5px; }
 .inventory-compact .item-category { margin-bottom: 4px; }
 .inventory-compact .item-category h3 { margin-bottom: 2px; font-size: 8px; letter-spacing: .08em; }
@@ -83,13 +84,38 @@
 .layer-controls button:disabled { opacity: .4; cursor: not-allowed; }
 .map-controls button { height: 26px; min-width: 26px; }
 .map-anchor { position: absolute; z-index: 2; width: 22px; height: 22px; transform: translate(-50%, -50%); }
-.map-anchor.open, .map-anchor:hover, .map-anchor:focus-within { z-index: 9; }
+.map-anchor.open { z-index: 9; }
 .map-pin { position: static; transform: none; width: 16px; height: 16px; margin: 3px; border-width: 2px;
+  padding: 0; display: grid; place-items: center;
   outline: 2px solid #06121e; box-shadow: 0 0 0 3px #06121ebd, 0 2px 7px #000;
   font-family: Manaspace, monospace; }
 .map-pin:hover, .map-pin:focus-visible { transform: scale(1.2); outline: 2px solid #fff4b8;
   box-shadow: 0 0 0 4px #071724d9, 0 0 10px #fff2ad; }
-.map-pin span { font-size: 11px; font-weight: 700; line-height: 1; white-space: nowrap; }
+.map-pin .map-symbol { display: grid; place-items: center; width: 100%; height: 100%;
+  font: 700 12px/1 "Segoe UI", sans-serif; white-space: nowrap; }
+.cannon-pin.target { outline: 2px solid #a9f4b7; box-shadow: 0 0 8px #83e5ab; }
+.cannon-cancel { position: absolute; top: 8px; left: 8px; z-index: 11; padding: 5px 8px;
+  border: 1px solid #e1bc77; border-radius: 4px; background: #172b3b; color: #ffe4aa; font-size: 11px; }
+
+.inventory-square .workspace { grid-template-columns: 330px minmax(0, 1fr); }
+.item-panel[data-layout="square"] { align-self: start; height: auto; max-height: 100%; border-bottom: 1px solid #34485a; }
+.item-panel[data-layout="square"] .item-scroll { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-areas: "characters characters" "elements weapons" "keys seeds"; gap: 12px 8px; padding: 10px; }
+.item-panel[data-layout="square"] [data-category="character"] { grid-area: characters; }
+.item-panel[data-layout="square"] [data-category="element"] { grid-area: elements; }
+.item-panel[data-layout="square"] [data-category="weapon"] { grid-area: weapons; }
+.item-panel[data-layout="square"] [data-category="key-item"] { grid-area: keys; }
+.item-panel[data-layout="square"] [data-category="seed"] { grid-area: seeds; }
+.item-panel[data-layout="square"] .item-category { margin: 0; }
+.item-panel[data-layout="square"] .item-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+.item-panel[data-layout="square"] [data-category="character"] .item-grid,
+.item-panel[data-layout="square"] [data-category="key-item"] .item-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.item-panel[data-layout="square"] .item-card { height: 36px; min-height: 36px; padding: 1px;
+  grid-template-columns: minmax(0, 1fr); grid-template-rows: 1fr; column-gap: 0; }
+.item-panel[data-layout="square"] .item-icon, .item-panel[data-layout="square"] .role-overlay { width: 28px; height: 28px; }
+.item-panel[data-layout="square"] .panel-note { display: none; }
+.item-panel[data-layout="square"] .weapon-stage { min-width: 13px; height: 13px; font: 10px/1 "Segoe UI", sans-serif; }
+.square-character-label { display: block; text-align: center; font-size: 10px; line-height: 16px; }
 .map-pin.pin-unreachable { background: #861f2d; border-color: #ffa6a1; color: #fff; border-style: dashed; }
 .map-pin.pin-reachable { background: #159447; border-color: #baffc5; color: white;
   box-shadow: 0 0 0 3px #06121ebd, 0 0 7px #8eff9870, 0 2px 7px #000; }
@@ -114,7 +140,7 @@
 .orb-pin img.orb-requirement { width: 17px; height: 17px; }
 .orb-manual-clear { width: 100%; padding: 5px; border: 1px solid #8c969e; background: #354652; color: #edf4f7; font-size: 10px; }
 .orb-manual-clear[aria-pressed="true"] { background: #697079; }
-.cannon-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+.cannon-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 4; }
 .cannon-line { stroke: #80d9fa; stroke-width: 1.5; opacity: .8; filter: drop-shadow(0 1px 1px #03101b); }
 .cannon-line.highlight { stroke: #fff2ac; stroke-width: 3; opacity: 1; }
 .cannon-line.incoming { stroke: #c6b6ff; stroke-width: 2.5; opacity: 1; }

@@ -29,6 +29,7 @@ export const FIRE_PALACE_ORB_LAYOUT = [
 export const UPPER_LAND_ORB_POSITION = { x: 1770, y: 2505, dx: 0, dy: 0 } as const;
 
 export const ORB_DISPLAY_OFFSET = new Map<OrbId, { x: number; y: number }>([
+  ["et_orb", { x: 0, y: 28 }], // Below Gaia; leave its nearby landing visible.
   ...GRAND_PALACE_ORB_OFFSET,
   ...FIRE_PALACE_ORB_LAYOUT.map(({ id, x, y }) => [id, { x, y }] as const),
   ["uf_orb", { x: UPPER_LAND_ORB_POSITION.dx, y: UPPER_LAND_ORB_POSITION.dy }],

@@ -4,7 +4,7 @@ import { CANNON_OFFICES, CANNON_OFFICE_BY_ID, CANNON_TARGETS, CANNON_TARGET_BY_I
   type CannonConnection, type CannonNodeId, type CannonDestinationId, type CannonPoint } from "../domain/cannons";
 import { chaosOfficeState, type WorldState } from "../state/worldState";
 import type { MapView } from "./mapTransform";
-import { worldToScreen } from "./mapTransform";
+import { cannonToScreen } from "./mapTransform";
 
 export type CannonAction = { kind: "add"; edge: CannonConnection } | { kind: "remove"; id: string } |
   { kind: "replace"; id: string; edge: CannonConnection } | { kind: "clear" } |
@@ -41,8 +41,12 @@ export function CannonLayer({ world, view, onAction, footerElement, onEditingCha
   if (mode === "open") return null;
   const lines = manual ? world.cannonConnections : [];
   const hoveredEdge = lines.find((entry) => connectionId(entry) === hoverRoute);
-  const activeOffice = source ?? pinnedOffice ?? (!hoverRoute && CANNON_OFFICE_BY_ID.has(hoverOffice as CannonNodeId) ? hoverOffice as CannonNodeId : null);
-  const coords = (point: CannonPoint) => worldToScreen(view, point.x, point.y, point.screenOffset?.x ?? 18, point.screenOffset?.y ?? 16);
+  const activeOffice = source ? null : (!hoverRoute && CANNON_OFFICE_BY_ID.has(hoverOffice as CannonNodeId) ? hoverOffice as CannonNodeId : pinnedOffice);
+  const coords = (point: CannonPoint) => cannonToScreen(view, point);
+  const beginRoute = (office: CannonNodeId, id: string | null = null) => {
+    setPinnedOffice(null); setHoverOffice(null); setHoverRoute(null);
+    setSource(office); setReplacing(id);
+  };
   const popupStyle = (x: number, y: number) => {
     const width = Math.min(228, Math.max(120, viewportSize.width - 8));
     const left = Math.min(Math.max(4, x + 12), Math.max(4, viewportSize.width - width - 4));
@@ -62,8 +66,7 @@ export function CannonLayer({ world, view, onAction, footerElement, onEditingCha
       if (source === id) return;
       const next = { from: source, to: id };
       onAction(replacing ? { kind: "replace", id: replacing, edge: next } : { kind: "add", edge: next });
-      setPinnedOffice(source);
-      cancel();
+      close();
     } else if (CANNON_OFFICE_BY_ID.has(id as CannonNodeId)) {
       onOfficeOpen?.();
       setPinnedOffice(pinnedOffice === id ? null : id as CannonNodeId);
@@ -80,6 +83,7 @@ export function CannonLayer({ world, view, onAction, footerElement, onEditingCha
   </div>;
   return <>
     {footer && (footerElement ? createPortal(footer, footerElement) : footer)}
+    {source && <button type="button" className="cannon-cancel" aria-label="Cancel Cannon route" onClick={close}>Cancel route (Esc)</button>}
     <svg className="cannon-lines" aria-label="Directed Cannon routes">
       <defs><marker id={arrowId} markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
         <path d="M0,0 L7,3.5 L0,7 Z" fill="context-stroke" /></marker></defs>
@@ -99,8 +103,8 @@ export function CannonLayer({ world, view, onAction, footerElement, onEditingCha
           <line className="cannon-line-hit" x1={start.x} y1={start.y} x2={end.x} y2={end.y} role="button" tabIndex={0}
             aria-label={`Cannon route ${CANNON_OFFICE_BY_ID.get(entry.from)!.name} to ${CANNON_TARGET_BY_ID.get(entry.to)!.name}`}
             onPointerDown={(event) => event.stopPropagation()} onClick={() => removeRoute(id)}
-            onMouseEnter={() => setHoverRoute(id)} onMouseLeave={() => setHoverRoute(null)}
-            onFocus={() => setHoverRoute(id)} onBlur={() => setHoverRoute(null)}
+            onMouseEnter={() => { setHoverRoute(id); onOfficeOpen?.(); }} onMouseLeave={() => setHoverRoute(null)}
+            onFocus={() => { setHoverRoute(id); onOfficeOpen?.(); }} onBlur={() => setHoverRoute(null)}
             onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); removeRoute(id); } }}>
             <title>Click to remove this directed route</title>
           </line>
@@ -120,11 +124,11 @@ export function CannonLayer({ world, view, onAction, footerElement, onEditingCha
         onMouseLeave={() => setHoverOffice(null)}
         onFocus={() => { setHoverOffice(point.id); if (manual && isOffice && !source) onOfficeOpen?.(); }}
         onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setHoverOffice(null); }}>
-        <button type="button" className={`cannon-pin${source === point.id ? " source" : ""}${!isOffice ? " landing" : ""}${highlighted ? " highlighted" : ""}${mode === "chaos" && state === "closed" ? " closed" : ""}`}
+        <button type="button" className={`cannon-pin${source === point.id ? " source" : source ? " target" : ""}${!isOffice ? " landing" : ""}${highlighted ? " highlighted" : ""}${mode === "chaos" && state === "closed" ? " closed" : ""}`}
           data-office-state={mode === "chaos" ? state ?? undefined : undefined}
           aria-label={`${point.name} Cannon ${isOffice ? "Office" : "Landing"}`} aria-expanded={isOffice && manual ? open : undefined}
-          title={`${point.name} · ${mode === "chaos" ? state : isOffice ? "Cannon Office" : "Landing destination"}`}
-          disabled={!manual || (!isOffice && !source)} onClick={() => choose(point.id)}>
+          title={`${point.name} · ${mode === "chaos" && isOffice ? state : isOffice ? "Cannon Office" : "Landing destination"}`}
+          disabled={!manual || source === point.id || (!isOffice && !source)} onClick={() => choose(point.id)}>
           {isOffice ? "➤" : "◆"}{mode === "chaos" && state === "closed" && <span className="cannon-closed" aria-hidden="true">×</span>}
         </button>
         {open && <div className="map-popover cannon-popover" role="region" aria-label={`${point.name} Cannon controls`} style={popupStyle(position.left, position.top)}>
@@ -134,16 +138,10 @@ export function CannonLayer({ world, view, onAction, footerElement, onEditingCha
           {outgoing.length ? <ul className="cannon-outgoing">{outgoing.map((entry) => {
             const id = connectionId(entry), destination = CANNON_TARGET_BY_ID.get(entry.to)!.name;
             return <li key={id}><span>→ {destination}</span><button type="button" aria-label={`Replace route to ${destination}`}
-              onClick={() => { setPinnedOffice(officeId); setSource(officeId); setReplacing(id); }}>Replace</button>
+              onClick={() => beginRoute(officeId, id)}>Replace</button>
               <button type="button" aria-label={`Remove route to ${destination}`} onClick={() => removeRoute(id)}>×</button></li>;
           })}</ul> : <p>No known routes.</p>}
-          {source === officeId ? <>
-            <label>{replacing ? "Replace destination" : "Destination"}<select aria-label={`Destination from ${point.name}`} value=""
-              onChange={(event) => choose(event.target.value as CannonDestinationId)}>
-              <option value="" disabled>Choose here or on map…</option>
-              {CANNON_TARGETS.filter((target) => target.id !== point.id).map((target) => <option key={target.id} value={target.id}>{target.name}</option>)}
-            </select></label><button type="button" onClick={cancel}>Cancel</button>
-          </> : <button type="button" onClick={() => { setPinnedOffice(officeId); setSource(officeId); setReplacing(null); }}>Add route</button>}
+          <button type="button" onClick={() => beginRoute(officeId)}>Add route</button>
           {mode === "chaos" && <button type="button" onClick={() => {
             onAction({ kind: "closed", office: officeId, closed: state !== "closed" }); cancel();
           }}>{state === "closed" ? "Unmark Closed" : "Mark Closed"}</button>}

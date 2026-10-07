@@ -7,10 +7,24 @@ import { MAP_AREAS } from "../data/mapAreas";
 import { addCannonConnection, clearCannonConnections, emptyWorldState, removeCannonConnection, setCannonOfficeClosed } from "../state/worldState";
 import { CannonLayer } from "./CannonLayer";
 import { SettingsPanel } from "./SettingsPanel";
-import { worldToScreen } from "./mapTransform";
+import { cannonToScreen, worldToScreen } from "./mapTransform";
 
 afterEach(cleanup);
 describe("office-local Cannon release polish", () => {
+  it("exposes the three inventory layouts and a collapsed marker legend in Settings, not the map", () => {
+    const onSetInventoryMode = vi.fn();
+    render(<SettingsPanel world={emptyWorldState()} sni={{ endpoint: "ws://mock", phase: "disconnected", devices: [], attachedDevice: null, serverInfo: [], error: null }}
+      onSelectDevice={vi.fn()} onClose={vi.fn()} dungeonMode="auto" onSetDungeonMode={vi.fn()} onToggleDisabledCharacter={vi.fn()}
+      onSetOrbMode={vi.fn()} onUpdateSetting={vi.fn()} onImportSettings={vi.fn()} inventoryMode="compact" onSetInventoryMode={onSetInventoryMode} />);
+    const select = screen.getByRole("combobox", { name: "Inventory Layout" });
+    expect([...select.querySelectorAll("option")].map((o) => o.textContent)).toEqual(["Normal", "Compact", "Square"]);
+    fireEvent.change(select, { target: { value: "square" } });
+    expect(onSetInventoryMode).toHaveBeenCalledWith("square");
+    const legend = screen.getByText("Map marker legend").closest("details")!;
+    expect(legend.hasAttribute("open")).toBe(false);
+    for (const symbol of ["+", "×", "✓", "?", "◐"]) expect(legend.textContent).toContain(symbol);
+    expect(legend.closest(".settings-dialog")).not.toBeNull();
+  });
   it("direct click removes exactly that directed route, preserving its reverse and unrelated routes", () => {
     function Harness() {
       const [world, setWorld] = useState(() => {
@@ -41,7 +55,11 @@ describe("office-local Cannon release polish", () => {
     expect(popup.contains(screen.getByRole("button", { name: "Add route" }))).toBe(true);
     fireEvent.mouseEnter(popup);
     fireEvent.click(within(popup).getByRole("button", { name: "Add route" }));
-    fireEvent.click(within(popup).getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByRole("region", { name: "Kakkara Cannon controls" })).toBeNull();
+    expect(document.querySelectorAll(".cannon-pin.target")).toHaveLength(8);
+    expect((office as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Cancel Cannon route" }));
+    fireEvent.mouseEnter(office);
     popup = screen.getByRole("region", { name: "Kakkara Cannon controls" });
     expect(within(popup).queryByRole("combobox")).toBeNull();
     fireEvent.click(within(popup).getByRole("button", { name: "Remove route to Ice Country" }));
@@ -91,7 +109,7 @@ describe("office-local Cannon release polish", () => {
     for (const scale of [.08, .12]) {
       const view = { scale, x: 140, y: 0 };
       const office: CannonPoint = CANNON_OFFICE_BY_ID.get("gaiasNavel")!;
-      const pin = worldToScreen(view, office.x, office.y, office.screenOffset?.x, office.screenOffset?.y);
+      const pin = cannonToScreen(view, office);
       const old = worldToScreen(view, 0x7f * 16, office.y, 18, 16);
       expect(pin.left).toBeLessThan(old.left - 8);
       expect(pin.left - 10).toBeGreaterThan(0);

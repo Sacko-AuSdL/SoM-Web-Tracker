@@ -64,7 +64,7 @@ export const LOCATION_DEFINITIONS = [
   { id: "wind-palace-reward-spring-beak", name: "Wind Palace Reward - Spring Beak", legacyPath: "@Upper Land/Sprite Village/Wind Palace Reward - Spring Beak", completionMode: "any", events: [{ eventNumber: 0x4e2 }] },
   { id: "gold-tower-chest-1", name: "Gold Tower Chest 1", legacyPath: "@Vandole Empire/Gold City/Gold Tower/Gold Tower Chest 1", completionMode: "any", events: [{ eventNumber: 0x67b }] },
   { id: "gold-tower-chest-2-blue-spike", name: "Gold Tower Chest 2 - Blue Spike", legacyPath: "@Vandole Empire/Gold City/Gold Tower/Gold Tower Chest 2 - Blue Spike", completionMode: "any", events: [{ eventNumber: 0x677 }] },
-  { id: "gold-tower-reward-gorgon-bull", name: "Gold Tower Reward - Gorgon Bull", legacyPath: "@Vandole Empire/Gold City/Gold Tower/Gold Tower Reward - Gorgon Bull", completionMode: "any", events: [{ eventNumber: 0x587 }] },
+  { id: "gold-tower-reward-gorgon-bull", name: "Gold Tower After Boss - Lumina", legacyPath: "@Vandole Empire/Gold City/Gold Tower/Gold Tower Reward - Gorgon Bull", completionMode: "any", events: [{ eventNumber: 0x587 }] },
   { id: "castle-chest", name: "Castle Chest", legacyPath: "@Vandole Empire/North Town/North Town Castle/Castle Chest", completionMode: "any", events: [{ eventNumber: 0x68d }] },
   { id: "north-town-castle-paired-chest-679", name: "North Town Castle Paired Chest 1", legacyPath: "@Vandole Empire/North Town/North Town Castle/Castle Double Chest", completionMode: "any", events: [{ eventNumber: 0x679 }] },
   { id: "north-town-castle-paired-chest-68f", name: "North Town Castle Paired Chest 2", legacyPath: "@Vandole Empire/North Town/North Town Castle/Castle Double Chest", completionMode: "any", events: [{ eventNumber: 0x68f }] },

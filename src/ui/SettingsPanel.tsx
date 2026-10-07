@@ -1,7 +1,7 @@
 import type { SniStatus } from "../autotracking/SniClient";
 import type { CrystalOrbMode } from "../domain/orbs";
 import type { Character, WorldSettings, WorldState } from "../state/worldState";
-import type { DungeonMode } from "../state/uiPreferences";
+import type { DungeonMode, InventoryMode } from "../state/uiPreferences";
 import { useState } from "react";
 import { parseRandomizerSettings, type ParsedRandomizerSettings, type SettingsDiagnostic } from "../adapters/randomizerSettings";
 import { CHARACTERS, isRoleRandomized } from "../state/worldState";
@@ -20,10 +20,12 @@ interface SettingsPanelProps {
   onClose: () => void;
   onImportSettings: (parsed: ParsedRandomizerSettings) => void;
   onClearCannonNetwork?: () => void;
+  inventoryMode?: InventoryMode;
+  onSetInventoryMode?: (mode: InventoryMode) => void;
 }
 
 export function SettingsPanel({ sni, onSelectDevice, world, onUpdateSetting, onSetOrbMode, onToggleDisabledCharacter,
-  dungeonMode, onSetDungeonMode, onClose, onImportSettings, onClearCannonNetwork }: SettingsPanelProps) {
+  dungeonMode, onSetDungeonMode, onClose, onImportSettings, onClearCannonNetwork, inventoryMode, onSetInventoryMode }: SettingsPanelProps) {
   const [raw, setRaw] = useState("");
   const [diagnostics, setDiagnostics] = useState<SettingsDiagnostic[]>([]);
   const [imported, setImported] = useState(false);
@@ -51,6 +53,10 @@ export function SettingsPanel({ sni, onSelectDevice, world, onUpdateSetting, onS
               <ul>{diagnostics.filter((d) => d.level === "warning").map((d, index) => <li key={index}>{d.message}</li>)}</ul></details>}
           </section>
           <div className="settings-grid">
+            {onSetInventoryMode && <label>Inventory Layout<select value={inventoryMode ?? "normal"}
+              onChange={(event) => onSetInventoryMode(event.target.value as InventoryMode)}>
+              <option value="normal">Normal</option><option value="compact">Compact</option><option value="square">Square</option>
+            </select></label>}
             <label>Logic<select value={world.settings.logic} onChange={(event) => onUpdateSetting("logic", event.target.value as WorldSettings["logic"])}>
               <option value="basic">Basic</option><option value="restrictive">Restrictive</option>
             </select></label>
@@ -115,6 +121,11 @@ export function SettingsPanel({ sni, onSelectDevice, world, onUpdateSetting, onS
               <p className="settings-hint">Clear entered routes for a new seed. Closed office marks are retained; manage those at each office.</p>
               <button type="button" disabled={!world.cannonConnections.length} onClick={onClearCannonNetwork}>Clear seed network</button>
             </details>}
+          <details className="marker-legend"><summary>Map marker legend</summary>
+            <ul><li>Green +: reachable / available</li><li>Red ×: blocked / unreachable</li>
+              <li>Grey ✓: completed</li><li>Amber ?: unknown</li>
+              <li>Amber ◐: partial / mixed known and uncertain access</li></ul>
+          </details>
           <label className="field-label" htmlFor="sni-device">SNI device</label>
           <select id="sni-device" value={sni.attachedDevice ?? ""} disabled={sni.devices.length === 0}
             onChange={(event) => onSelectDevice(event.target.value)}>
