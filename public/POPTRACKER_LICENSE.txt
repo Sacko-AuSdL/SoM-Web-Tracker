@@ -1,4 +1,5 @@
-Bundled PopTracker map/item assets and source data snapshots are sourced from SoM-Open_Mode-Tracker.
+Attribution for tracker-derived code/data from SoM-Open_Mode-Tracker.
+Underlying game artwork is excluded from this notice's scope; see the repository's THIRD_PARTY_NOTICES.md.
 
 MIT License
 

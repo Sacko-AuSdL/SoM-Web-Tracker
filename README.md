@@ -50,7 +50,13 @@ click to pin its popup. Green means reachable, amber partial/unknown, red
 unreachable, and grey complete. AVAILABLE counts reachable unfinished checks,
 not unknown or checkable-only checks. Hints show regional sources, not contents.
 
-The inventory **N/C** toggle selects Normal or narrow Compact stream layouts.
+The inventory **N/C/S** toggle (also **Settings → Inventory Layout**) selects
+Normal, narrow Compact, or Square. Square places Characters across the top,
+Elements/Weapons side-by-side in 4×2 grids, then Key Items (3+2) / Mana Seeds
+(4×2) side-by-side. It is a close-to-square OBS crop panel, not a forced 1:1 box.
+Crystal Orbs remain map-only. Availability, presence and role overlays remain
+independent in every layout. The existing v1 layout preference key is retained,
+so saved Normal/Compact preferences survive and Square persists on reload.
 Weapon numbers are weapon-orb stages, not weapon power. Settings and layout
 preferences are stored in this browser. They are not isolated by ROM/seed:
 review or reset manual entries when changing seeds.
@@ -78,12 +84,14 @@ seed-specific Orb requirements, Cannon routes, or rolled character roles.
 - **Open Cannons:** automatic deterministic travel, without a 56-edge display
   or route-selection UI.
 - **Shuffle / Chaos:** enable **Cannons**, hover/click an office for its compact
-  local controls. Choose **Add route**, then a destination in that popup or on
-  the map. Replace/remove outgoing routes at the office; clicking a visible
+  local controls. **Hover = inspect; click = act.** Choose **Add route** or
+  **Replace**: the popup closes immediately and the map fits to show all valid
+  destinations with green outlines (the orange source cannot target itself).
+  Click a destination to finish. Replace/remove outgoing routes at the office; clicking a visible
   route directly removes only that directed edge. All entered routes stay
   visible; reverse routes are never inferred. Hover an office to highlight
   outgoing/incoming routes, or hover/focus a line to highlight its endpoints
-  and dim unrelated routes. Cancel with **Esc** or the local **Cancel** button.
+  and dim unrelated routes. Cancel with **Esc** or the small **Cancel route** button.
   The footer contains helper text only. Gameplay markers are temporarily
   passive only while choosing a destination.
 - **Chaos Closed:** click an office and choose **Mark Closed**. A small × marks
@@ -148,11 +156,23 @@ to all of its child chests; an individual child can then be undone separately.
 Clarified titles retain the original IDs/events: **Kakkara NPC - Sea Hare Tail
 Trade** describes the access requirement, not a guaranteed reward.
 **Tropical Town After Boss - Stove** is event 38c, the stove prize unlocked
-after Boreal Face. Source file/line evidence is in `source/provenance.json`.
-No suitable accepted Cannon artwork exists in the bundled assets, so the
-existing arrow symbol is retained. Display-only marker offsets separate
-Gaia's Navel office and Joch's Cave/Doppelgangers; Upper Land's Orb sits lower,
-left of Sprite Village. Gameplay mappings and travel regions are unchanged.
+after Boreal Face. **Gold Tower After Boss - Lumina** identifies event 587's
+Lumina prize source, with two reward slots in the Randomizer; it does not imply
+guaranteed randomized contents. IDs, events and legacy manual marks are unchanged.
+Source file/line evidence is in `source/provenance.json`.
+
+The local Randomizer resources, resource manifest, project resource inventory,
+and NPC/sprite/Cannon references were searched read-only. They contain character
+sprites but no suitable Canoni/Cannon NPC sprite or sheet. The generic arrow
+is retained; no web asset was used. Gaia's Cannon keeps its original logical
+coordinate with a smooth leftward display offset at fit scale, fading out when
+zooming in. Earth Palace Orb is displayed below Gaia; Upper Land's existing
+lower, left-of-Sprite-Village placement was reviewed and retained. Joch's Cave
+remains separated from Dark Palace. Gameplay mappings/travel regions are unchanged.
+
+**Settings → Map marker legend** explains the centered symbols: green **+**
+reachable/available, red **×** blocked, grey **✓** completed, amber **?** unknown,
+amber **◐** partial/mixed access. The legend adds no map overlay clutter.
 
 ## Verification and limitations
 
@@ -171,18 +191,26 @@ validation. Faults in one tracked entity do not stop other subsystems.
 
 ## Credits and licenses
 
-- Accepted SoM-Open_Mode-Tracker assets and data by Cyb3R and contributors;
+- This browser tracker uses/adapts data, logic and structure derived from or
+  informed by the earlier SoM-Open_Mode-Tracker by Cyb3R and contributors;
   bundled unchanged images are in `src/assets/poptracker`, source snapshots in
   `source/poptracker`. The package MIT notice is preserved in
   [POPTRACKER_LICENSE.txt](public/POPTRACKER_LICENSE.txt).
-- Secret of Mana Randomizer behavior informed the mappings, notably
+- Secret of Mana Randomizer by Moppleton and contributors (local repository
+  license: LGPL-2.1) informed the mappings, notably
   `OpenWorldSettings.cs`, `OpenWorldCharacterSelection.cs`, and Cannon travel
-  models. No Randomizer checkout is required or modified.
+  models. No Randomizer checkout is required or modified; the repository MIT
+  notice does not relicense Randomizer material.
 - Manaspace by codeman38 / zone38; font and its original redistribution terms
   are bundled in [public/fonts](public/fonts/license.txt).
 - Secret of Mana and underlying game artwork belong to their respective owners.
   The PopTracker package notice is not a guarantee of rights to underlying game
   artwork; review that provenance before public distribution.
 
-The tracker application's own license has not yet been selected. Choose one
-before presenting this repository as an openly licensed public release.
+Original project code is released under [MIT](LICENSE), Copyright (c) 2026 Sacko.
+Third-party components retain their own licenses. Game artwork, sprites and map
+imagery are not covered by the repository MIT license and remain the property
+of their respective rights holders. This is an unofficial project, not affiliated
+with or endorsed by Square Enix; these notices grant no redistribution rights
+for game assets. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and
+[source/provenance.json](source/provenance.json) for the boundaries and sources.
