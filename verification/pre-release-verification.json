@@ -1,0 +1,83 @@
+{
+  "phase": "Final pre-release UX pass",
+  "date": "2026-10-07",
+  "baselineCommit": "a65817d",
+  "verifiedImplementationCommits": [
+    { "hash": "d39ea29", "message": "Polish Cannon map interactions and add Square inventory layout" },
+    { "hash": "036679e", "message": "Clarify original-code licensing and third-party asset provenance" }
+  ],
+  "checks": {
+    "unitTests": { "command": "npm.cmd test", "passed": 235, "failed": 0, "filesPassed": 26 },
+    "typecheck": { "command": "npm.cmd run typecheck", "exitCode": 0 },
+    "productionBuild": { "command": "npm.cmd run build", "exitCode": 0 },
+    "devSmoke": { "command": "npm.cmd run dev -- --host 127.0.0.1 --strictPort", "url": "http://127.0.0.1:5173/", "portConfigurationChanged": false, "consoleWarningsOrErrors": 0, "serverStopped": true }
+  },
+  "visualEvidence": {
+    "viewports": ["1280x720 desktop", "960x540 stream"],
+    "layoutsReviewed": ["Normal", "Compact", "Square"],
+    "squarePanel": { "width": 330, "height": 359, "horizontalOverflow": false, "inventoryScrolling": false, "iconsInsideCards": 32, "selectionSurvivesReload": true },
+    "markerCentering": { "symbols": ["+", "×", "✓", "?", "◐"], "measuredHorizontalAndVerticalCenterDifferencePixels": 0 },
+    "cannons": {
+      "hoverUnitCoverage": true,
+      "browserOfficeFocusAndControlsVerified": true,
+      "popupAbsentDuringAddAndReplace": true,
+      "allEightValidTargetsVisibleAfterStartingAtCloserZoom": true,
+      "directRouteClickRemovesExactEdge": true,
+      "routeInspectionDismissesGameplayPopups": true,
+      "closedRetainsRoutesAndReopeningRestores": true,
+      "routeHighlightEndpoints": 2,
+      "footerRouteManagementButtons": 0
+    },
+    "map": {
+      "earthPalaceOrb": "Display-only 28px below unchanged Gaia coordinate; landing remains visible",
+      "gaiasNavel": "Original logical coordinate retained; continuous declutter offset fades toward original display position on closer zoom",
+      "upperLandOrb": "Existing lower, left-of-Sprite-Village position reviewed and retained",
+      "goldTower": "Gold Tower After Boss - Lumina displayed; event 0x587 and original ID/legacy path retained"
+    },
+    "cleanup": "Temporary Potos/Mantis manual marks and test Cannon routes/Closed states removed; baseline Vanilla Cannon mode, Normal roles and Compact layout restored; viewport reset and agent-created browser tab closed"
+  },
+  "sourceIntegrity": {
+    "randomizerModified": false,
+    "bundledSnapshotsImagesFontNoticeModified": false,
+    "locationsLuaSha256": "6C7CB20AC2DC5588390C95C584F883F8BABA4BE6F40D71F7315C88F7262E72E3",
+    "canoniSpriteFound": false,
+    "canoniOutcome": "Local Randomizer search documented in source/provenance.json; generic office arrow retained, no downloaded or extracted image",
+    "absoluteWindowsPathsInPublicNotices": false
+  },
+  "changedFiles": [
+    "src/App.tsx",
+    "src/data/locationDefinitions.ts",
+    "src/data/orbLayout.ts",
+    "src/domain/cannons.ts",
+    "src/state/uiPreferences.ts",
+    "src/state/uiPreferences.test.ts",
+    "src/styles.css",
+    "src/ui/CannonLayer.tsx",
+    "src/ui/ItemPanel.tsx",
+    "src/ui/SettingsPanel.tsx",
+    "src/ui/WorldMap.tsx",
+    "src/ui/finalPolish.test.tsx",
+    "src/ui/functionalPhase.test.tsx",
+    "src/ui/mapTransform.ts",
+    "src/ui/markerStyles.test.js",
+    "src/ui/preReleaseUx.test.tsx",
+    "src/ui/ui.test.tsx",
+    "README.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "public/POPTRACKER_LICENSE.txt",
+    "source/provenance.json",
+    "verification/pre-release-normal.jpg",
+    "verification/pre-release-compact-desktop.jpg",
+    "verification/pre-release-compact-stream.jpg",
+    "verification/pre-release-square-desktop.jpg",
+    "verification/pre-release-square-stream.jpg",
+    "verification/pre-release-square-role-states.jpg",
+    "verification/pre-release-cannon-targets.jpg",
+    "verification/pre-release-map-fit.jpg",
+    "verification/pre-release-gaia-zoom.jpg",
+    "verification/pre-release-verification.json"
+  ],
+  "remainingUnverified": ["Real running SNI/emulator and seed-specific event behavior in this phase", "Game-derived asset redistribution permissions and any applicable third-party licensing obligations before public distribution"],
+  "pushPerformed": false
+}
