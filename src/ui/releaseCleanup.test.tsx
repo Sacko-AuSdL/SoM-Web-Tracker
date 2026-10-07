@@ -57,7 +57,7 @@ describe("focused release Cannon UX", () => {
     expect(document.querySelectorAll(".cannon-line")).toHaveLength(1);
     fireEvent.click(screen.getByRole("button", { name: "Kakkara Cannon Office" }));
     fireEvent.keyDown(window, { key: "Escape" });
-    fireEvent.click(screen.getByRole("button", { name: "Cannon route Potos to Southtown" }));
+    fireEvent.click(potos);
     fireEvent.click(screen.getByRole("button", { name: "Mark Closed" }));
     expect(potos.getAttribute("data-office-state")).toBe("closed");
     expect(screen.getByRole("button", { name: "Kakkara Cannon Office" }).getAttribute("data-office-state")).toBe("unknown");

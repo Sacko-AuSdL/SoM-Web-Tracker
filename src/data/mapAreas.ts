@@ -19,6 +19,10 @@ export const MAP_AREAS: readonly MapArea[] = MAP_GROUPS.flatMap<MapArea>((group)
   { ...group, id: "undine-cave", name: "Undine Cave", x: 2207, y: 2895,
     screenOffset: { x: 10, y: -8 },
     checkIds: ["undine-biting-lizard"], sourceNote: "PopTracker lists one check with two reward slots." },
-] : [{ ...group, ...(group.id === "elinee-s-castle" ? { screenOffset: { x: -7, y: 3 } } : {}) }]);
+] : [{ ...group,
+  ...(group.id === "elinee-s-castle" ? { screenOffset: { x: -7, y: 3 } } : {}),
+  ...(group.id === "lofty-mountains-joch-s-cave" ? { screenOffset: { x: 16, y: 0 } } : {}),
+  ...(group.id === "ice-country-tropical-town-tropical-town-boss-boreal-face" ? { name: "Tropical Town After Boss - Stove" } : {}),
+}]);
 
 export const MAP_AREA_BY_ID = new Map(MAP_AREAS.map((area) => [area.id, area]));

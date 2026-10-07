@@ -8,7 +8,7 @@ export type Character = "boy" | "girl" | "sprite";
 export type Role = Character | "unknown";
 export const CHARACTERS = ["boy", "girl", "sprite"] as const;
 export const ROLE_LABELS: Record<Role, string> = {
-  unknown: "Unknown", boy: "Boy / Warrior", girl: "Girl / Light Mage", sprite: "Sprite / Dark Mage",
+  unknown: "Unknown", boy: "Boy", girl: "Girl", sprite: "Sprite",
 };
 export interface WorldSettings {
   logic: "basic" | "restrictive";

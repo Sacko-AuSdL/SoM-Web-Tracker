@@ -49,6 +49,7 @@ export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck,
     if (active) { setPinned(null); setHovered(null); }
   }, []);
   const open = pinned ?? hovered;
+  const officeOpened = useCallback(() => { setPinned(null); setHovered(null); }, []);
   const context = createLogicContext(ram, manualItems, world);
   useEffect(() => {
     const viewport = viewportRef.current;
@@ -73,6 +74,7 @@ export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck,
     });
   };
   const onWheel = (event: WheelEvent<HTMLDivElement>) => {
+    if ((event.target as HTMLElement).closest(".map-popover")) return;
     event.preventDefault();
     const rect = event.currentTarget.getBoundingClientRect();
     zoomAt(event.deltaY < 0 ? 1.18 : 1 / 1.18, { x: event.clientX - rect.left, y: event.clientY - rect.top });
@@ -131,6 +133,7 @@ export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck,
         style={{ width: MAP_IMAGE_SIZE.width * view.scale, height: MAP_IMAGE_SIZE.height * view.scale,
           left: view.x, top: view.y, imageRendering: view.scale >= 1 ? "pixelated" : "auto" }} />
       {cannonsVisible && size.width > 0 && <CannonLayer world={world} view={view} footerElement={cannonFooter} onEditingChange={editingChanged}
+        viewportSize={size} onOfficeOpen={officeOpened}
         onAction={(action) => onCannonAction?.(action)} />}
       {/* Area, Orb, hint and directed Cannon overlays share one transform. */}
       {layers.checks && size.width > 0 && MAP_AREAS.map((area) => {

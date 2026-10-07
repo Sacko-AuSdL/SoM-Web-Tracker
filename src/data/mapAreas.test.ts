@@ -29,11 +29,15 @@ describe("explicit browser map areas", () => {
     expect(undine!.screenOffset).toEqual({ x: 10, y: -8 });
     expect(LOCATION_DEFINITIONS.find((check) => check.id === "undine-biting-lizard")?.events[0].eventNumber).toBe(0x581);
   });
-  it("anchors Upper Land to Matango's southern forest gate and puts three Fire Palace Orbs in a row below the palace", () => {
+  it("anchors Upper Land lower and closer to Sprite Village's forest gate and keeps three Fire Palace Orbs below the palace", () => {
     const upperSource = ORB_SOURCE_DEFINITIONS.find((orb) => orb.id === "uf_orb")!;
-    expect(UPPER_LAND_ORB_POSITION).toEqual({ x: 1705, y: 2325, dx: 0, dy: 0 });
     const matango = MAP_AREAS.find((area) => area.id === "upper-land-matango")!;
-    expect(Math.abs(UPPER_LAND_ORB_POSITION.x - matango.x)).toBeLessThan(30);
+    const sprite = MAP_AREAS.find((area) => area.id === "upper-land-sprite-village")!;
+    expect(UPPER_LAND_ORB_POSITION.x).toBeLessThan(sprite.x);
+    expect(UPPER_LAND_ORB_POSITION.y).toBeGreaterThan(2325);
+    expect(UPPER_LAND_ORB_POSITION.y).toBeLessThan(sprite.y);
+    expect(Math.hypot(sprite.x - UPPER_LAND_ORB_POSITION.x, sprite.y - UPPER_LAND_ORB_POSITION.y))
+      .toBeLessThan(Math.hypot(sprite.x - 1705, sprite.y - 2325));
     expect(UPPER_LAND_ORB_POSITION.y).toBeGreaterThan(matango.y);
     expect([UPPER_LAND_ORB_POSITION.x, UPPER_LAND_ORB_POSITION.y]).not.toEqual([upperSource.x, upperSource.y]);
     expect(FIRE_PALACE_ORB_LAYOUT.map((orb) => orb.id)).toEqual(["fp_orb1", "fp_orb2", "fp_orb3"]);

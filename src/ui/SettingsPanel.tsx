@@ -19,10 +19,11 @@ interface SettingsPanelProps {
   onSetDungeonMode: (mode: DungeonMode) => void;
   onClose: () => void;
   onImportSettings: (parsed: ParsedRandomizerSettings) => void;
+  onClearCannonNetwork?: () => void;
 }
 
 export function SettingsPanel({ sni, onSelectDevice, world, onUpdateSetting, onSetOrbMode, onToggleDisabledCharacter,
-  dungeonMode, onSetDungeonMode, onClose, onImportSettings }: SettingsPanelProps) {
+  dungeonMode, onSetDungeonMode, onClose, onImportSettings, onClearCannonNetwork }: SettingsPanelProps) {
   const [raw, setRaw] = useState("");
   const [diagnostics, setDiagnostics] = useState<SettingsDiagnostic[]>([]);
   const [imported, setImported] = useState(false);
@@ -101,14 +102,19 @@ export function SettingsPanel({ sni, onSelectDevice, world, onUpdateSetting, onS
                 const random = event.target.value === "random";
                 onUpdateSetting("roleModeBySlot", { ...world.settings.roleModeBySlot, [slot]: random ? "random" : "normal" });
                 if (!random) onUpdateSetting("fixedRoles", { ...world.settings.fixedRoles, [slot]: event.target.value.slice(2) as Character });
-              }}><option value="random">Randomized (?)</option><option value="OGboy">Boy / Warrior</option>
-              <option value="OGgirl">Girl / Light Mage</option><option value="OGsprite">Sprite / Dark Mage</option></select>
+              }}><option value="random">Randomized (?)</option><option value="OGboy">Boy</option>
+              <option value="OGgirl">Girl</option><option value="OGsprite">Sprite</option></select>
           </label>)}</div>
           <fieldset className="character-settings"><legend>Disabled characters (if configured by seed)</legend>
             {(["boy", "girl", "sprite"] as const).map((character) => <label key={character}><input type="checkbox"
               checked={world.disabledCharacters.includes(character)} onChange={() => onToggleDisabledCharacter(character)} />{character}</label>)}
           </fieldset>
           <p className="settings-hint">Changing Crystal Orb mode clears requirements that are invalid in the new mode. Check/orb settings persist locally; inventory manual marks remain session-only.</p>
+          {onClearCannonNetwork && (world.settings.cannonMode === "shuffle" || world.settings.cannonMode === "chaos") &&
+            <details className="cannon-network-settings"><summary>Cannon network fallback</summary>
+              <p className="settings-hint">Clear entered routes for a new seed. Closed office marks are retained; manage those at each office.</p>
+              <button type="button" disabled={!world.cannonConnections.length} onClick={onClearCannonNetwork}>Clear seed network</button>
+            </details>}
           <label className="field-label" htmlFor="sni-device">SNI device</label>
           <select id="sni-device" value={sni.attachedDevice ?? ""} disabled={sni.devices.length === 0}
             onChange={(event) => onSelectDevice(event.target.value)}>

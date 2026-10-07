@@ -127,7 +127,7 @@ describe("map-first interaction", () => {
 });
 
 describe("randomized character role overlay", () => {
-  it("uses PopTracker's unknown, Boy/Warrior, Girl/Light Mage and Sprite/Dark Mage assignments without changing RAM presence", () => {
+  it("uses only Unknown, Boy, Girl and Sprite role labels without changing RAM presence", () => {
     const ram = emptyRamState();
     ram.inventory.boy = true;
     const initial = emptyWorldState();
@@ -146,7 +146,8 @@ describe("randomized character role overlay", () => {
     expect(screen.getByRole("button", { name: /Girl slot: not present/ }).querySelector(".role-overlay")).toBeNull();
     fireEvent.click(boy);
     expect(togglePresence).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Sprite / Dark Mage" }));
+    expect(document.body.textContent).not.toMatch(/Warrior|Light Mage|Dark Mage/);
+    fireEvent.click(screen.getByRole("button", { name: "Sprite" }));
     expect(boy.querySelector(".role-overlay")?.getAttribute("data-role")).toBe("sprite");
     expect(boy.querySelector(".item-icon")?.getAttribute("src")).toBe(baseImage);
     expect(ram.inventory.boy).toBe(true);
@@ -169,7 +170,7 @@ describe("randomized character role overlay", () => {
     render(<Harness />);
     const sprite = screen.getByRole("button", { name: /Sprite slot: not present; Missing/ });
     fireEvent.click(sprite);
-    fireEvent.click(screen.getByRole("button", { name: "Boy / Warrior" }));
+    fireEvent.click(screen.getByRole("button", { name: "Boy" }));
     expect(sprite.getAttribute("aria-label")).toContain("not present");
     expect(sprite.querySelector(".role-overlay")?.getAttribute("data-role")).toBe("boy");
     expect(ram.inventory.sprite).toBe(false);

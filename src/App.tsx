@@ -131,6 +131,7 @@ export default function App() {
       </footer>
 
       {settingsOpen && <SettingsPanel sni={snapshot.sni} onSelectDevice={selectDevice} world={world}
+        onClearCannonNetwork={() => setWorld((current) => clearCannonConnections(current))}
         onUpdateSetting={updateSetting} onSetOrbMode={changeOrbMode} onToggleDisabledCharacter={toggleDisabledCharacter}
         onImportSettings={(parsed) => setWorld((current) => applyRandomizerSettings(current, parsed))}
         dungeonMode={ui.dungeonMode}

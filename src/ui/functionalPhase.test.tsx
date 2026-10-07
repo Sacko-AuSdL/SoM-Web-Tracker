@@ -99,6 +99,8 @@ describe("directed Cannon map editing", () => {
     expect(screen.queryByRole("button", { name: "Edit Cannons" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Potos Cannon Office" }));
     expect(screen.queryByRole("heading", { name: "Potos" })).toBeNull();
+    expect(document.querySelector(".orb-anchor")?.hasAttribute("inert")).toBe(false);
+    fireEvent.click(screen.getByRole("button", { name: "Add route" }));
     expect(document.querySelector(".orb-anchor")?.hasAttribute("inert")).toBe(true);
     expect(document.querySelector(".cannon-anchor")?.hasAttribute("inert")).toBe(false);
     expect(document.querySelector(".map-viewport .cannon-status")).toBeNull();
@@ -106,7 +108,7 @@ describe("directed Cannon map editing", () => {
     fireEvent.keyDown(window, { key: "Escape" });
     expect(document.querySelector(".orb-anchor")?.hasAttribute("inert")).toBe(false);
   });
-  it("adds, replaces, selects/removes and clears routes without adding reverse edges", () => {
+  it("adds and replaces locally, then directly removes routes without adding reverse edges or footer controls", () => {
     const initial = emptyWorldState(); initial.settings.cannonMode = "shuffle";
     const actions: CannonAction[] = [];
     function Harness() {
@@ -118,22 +120,25 @@ describe("directed Cannon map editing", () => {
     }
     render(<Harness />);
     fireEvent.click(screen.getByRole("button", { name: "Kakkara Cannon Office" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add route" }));
     fireEvent.click(screen.getByRole("button", { name: "Ice Country Cannon Office" }));
     expect(screen.getByRole("button", { name: "Cannon route Kakkara to Ice Country" })).toBeDefined();
     expect(document.querySelectorAll(".cannon-line")).toHaveLength(1);
     expect(actions[0]).toEqual({ kind: "add", edge: { from: "kakkara", to: "iceCountry" } });
-    fireEvent.click(screen.getByRole("button", { name: "Replace destination" }));
+    fireEvent.click(screen.getByRole("button", { name: "Replace route to Ice Country" }));
     fireEvent.click(screen.getByRole("button", { name: "Water Palace Cannon Landing" }));
     expect(screen.queryByRole("button", { name: "Cannon route Kakkara to Ice Country" })).toBeNull();
     const route = screen.getByRole("button", { name: "Cannon route Kakkara to Water Palace" });
     fireEvent.keyDown(route, { key: "Enter" });
-    fireEvent.click(screen.getByRole("button", { name: "Remove route" }));
     expect(document.querySelectorAll(".cannon-line")).toHaveLength(0);
     fireEvent.click(screen.getByRole("button", { name: "Potos Cannon Office" }));
-    fireEvent.click(screen.getByRole("button", { name: "Kakkara Cannon Office" }));
-    fireEvent.click(screen.getByRole("button", { name: "Clear seed network" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add route" }));
+    fireEvent.change(screen.getByRole("combobox", { name: "Destination from Potos" }), { target: { value: "kakkara" } });
+    fireEvent.click(screen.getByRole("button", { name: "Cannon route Potos to Kakkara" }));
     expect(document.querySelectorAll(".cannon-line")).toHaveLength(0);
-    expect(actions.map((a) => a.kind)).toEqual(["add", "replace", "remove", "add", "clear"]);
+    expect(document.querySelector(".cannon-status button")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Clear seed network" })).toBeNull();
+    expect(actions.map((a) => a.kind)).toEqual(["add", "replace", "remove", "add", "remove"]);
   });
   it("uses the shared map transform for pins and arrow endpoints on pan and zoom", () => {
     const world = addCannonConnection(emptyWorldState(), { from: "kakkara", to: "iceCountry" }); world.settings.cannonMode = "chaos";

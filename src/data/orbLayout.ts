@@ -26,7 +26,7 @@ export const FIRE_PALACE_ORB_LAYOUT = [
 // Display-only, approximate gate: the forest/meadow transition on Matango's
 // southern approach, not the isolated ring clearing east of the castle.
 // The overworld illustration does not depict the literal in-room Orb.
-export const UPPER_LAND_ORB_POSITION = { x: 1705, y: 2325, dx: 0, dy: 0 } as const;
+export const UPPER_LAND_ORB_POSITION = { x: 1770, y: 2505, dx: 0, dy: 0 } as const;
 
 export const ORB_DISPLAY_OFFSET = new Map<OrbId, { x: number; y: number }>([
   ...GRAND_PALACE_ORB_OFFSET,
