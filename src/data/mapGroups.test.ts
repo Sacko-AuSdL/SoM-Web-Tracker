@@ -34,14 +34,15 @@ describe("PopTracker overworld conversion", () => {
 
   it("keeps authoritative coordinates and hierarchy for every pin", () => {
     const sourceByPath = sourceAreas(source);
-    const checksByPath = new Map<string, string>(LOCATION_DEFINITIONS.map((check) => [check.legacyPath, check.id]));
+    const checksByPath = new Map<string, string[]>();
+    for (const check of LOCATION_DEFINITIONS) checksByPath.set(check.legacyPath, [...(checksByPath.get(check.legacyPath) ?? []), check.id]);
     for (const group of MAP_GROUPS) {
       const area = sourceByPath.get(group.path);
       expect(area, group.path).toBeDefined();
       const pin = area!.map_locations!.find((location) => location.map === "overworld");
       expect({ x: group.x, y: group.y }, group.path).toEqual({ x: pin?.x, y: pin?.y });
       const expected = area!.sections?.filter((section) => section.item_count)
-        .map((section) => checksByPath.get(`@${group.path}/${section.name}`));
+        .flatMap((section) => checksByPath.get(`@${group.path}/${section.name}`) ?? []);
       expect(group.checkIds, group.path).toEqual(expected);
       expect(group.x).toBeGreaterThanOrEqual(0);
       expect(group.x).toBeLessThanOrEqual(MAP_IMAGE_SIZE.width);
@@ -54,7 +55,7 @@ describe("PopTracker overworld conversion", () => {
     expect(MAP_GROUPS.find((group) => group.id === "potos")?.checkIds).toEqual([
       "sword-pedestal", "potos-chest", "mantis-ant",
     ]);
-    expect(MAP_GROUPS.find((group) => group.id === "pandora")?.checkIds).toHaveLength(3);
+    expect(MAP_GROUPS.find((group) => group.id === "pandora")?.checkIds).toHaveLength(8);
     expect(MAP_GROUPS.find((group) => group.id === "gaia-s-navel")?.checkIds).toHaveLength(7);
   });
 });

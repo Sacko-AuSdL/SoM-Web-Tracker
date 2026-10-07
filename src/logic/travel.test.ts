@@ -83,7 +83,7 @@ describe("starting frontier and directed region travel", () => {
     const before = count();
     world = addCannonConnection(world, { from: "kakkara", to: "potos" });
     expect(count().available).toBeGreaterThan(before.available);
-    expect(count()).toMatchObject({ total: 68, completed: 0 });
+    expect(count()).toMatchObject({ total: LOCATION_DEFINITIONS.length, completed: 0 });
     world = removeCannonConnection(world, "kakkara:potos");
     expect(count()).toEqual(before);
     world.settings.cannonMode = "vanilla";
@@ -94,7 +94,7 @@ describe("starting frontier and directed region travel", () => {
     expect(evaluateCheck("potos-chest", createLogicContext(ram, new Set(), world), manual).access).toBe("reachable");
   });
   it("maps every existing check to a region and evaluates all modes without missing gates", () => {
-    expect(CHECK_REGION.size).toBe(68);
+    expect(CHECK_REGION.size).toBe(LOCATION_DEFINITIONS.length);
     for (const mode of ["vanilla", "open", "shuffle", "chaos"] as const) {
       const context = createLogicContext(emptyRamState(), new Set(), kakkara(mode));
       for (const location of LOCATION_DEFINITIONS) expect(() => evaluateCheck(location.id, context, manual)).not.toThrow();

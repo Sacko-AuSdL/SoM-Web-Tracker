@@ -31,20 +31,14 @@ describe("PopTracker data migration", () => {
     });
   });
 
-  it("ports all 68 standard locations and 76 event bindings", () => {
-    expect(LOCATION_DEFINITIONS).toHaveLength(68);
+  it("ports all 76 independent standard checks and preserves 76 event bindings", () => {
+    expect(LOCATION_DEFINITIONS).toHaveLength(76);
     expect(LOCATION_EVENT_BINDING_COUNT).toBe(76);
   });
 
-  it("represents PopTracker's multi-event and target-value special cases as data", () => {
-    expect(LOCATION_BY_ID.get("pandora-castle-chests")).toMatchObject({
-      completionMode: "all",
-      events: [
-        { eventNumber: 0x673 }, { eventNumber: 0x67c },
-        { eventNumber: 0x683 }, { eventNumber: 0x684 },
-        { eventNumber: 0x685 }, { eventNumber: 0x686 },
-      ],
-    });
+  it("represents PopTracker's independent Pandora events and target-value special cases as data", () => {
+    expect(LOCATION_DEFINITIONS.filter((check) => check.legacyPath === "@Pandora/Pandora Castle Chests")
+      .map((check) => check.events[0].eventNumber)).toEqual([0x673, 0x67c, 0x683, 0x684, 0x685, 0x686]);
     expect(LOCATION_BY_ID.get("kakkara-npc")?.events).toEqual([
       { eventNumber: 0x2b2, completedValue: 2 },
     ]);

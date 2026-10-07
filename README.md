@@ -40,7 +40,7 @@ The tracker reads emulator memory; it does not write game state.
 
 ## Using the tracker
 
-Tracks 68 standard logical checks (76 event bindings), 40 inventory values,
+Tracks 76 independent standard checks (76 event bindings), 40 inventory values,
 and 14 persistent Crystal Orb cleared states. Check counts refer to underlying
 checks, not reward slots. Water Palace and Undine Cave are separate areas;
 Undine's Biting Lizard is one check with two reward slots.
@@ -77,16 +77,20 @@ seed-specific Orb requirements, Cannon routes, or rolled character roles.
   layer shows offices without editing or a route mesh.
 - **Open Cannons:** automatic deterministic travel, without a 56-edge display
   or route-selection UI.
-- **Shuffle / Chaos:** enable **Cannons**, click a source office then a
-  destination. All entered directed routes stay visible; reverse routes are
-  never inferred. Hover an office to highlight outgoing/incoming routes, or
-  hover a line to highlight its endpoints. Select a line to remove it or replace
-  its destination. Cancel with **Esc**. Editing controls live below the map;
-  gameplay markers are temporarily passive only while choosing a destination.
+- **Shuffle / Chaos:** enable **Cannons**, hover/click an office for its compact
+  local controls. Choose **Add route**, then a destination in that popup or on
+  the map. Replace/remove outgoing routes at the office; clicking a visible
+  route directly removes only that directed edge. All entered routes stay
+  visible; reverse routes are never inferred. Hover an office to highlight
+  outgoing/incoming routes, or hover/focus a line to highlight its endpoints
+  and dim unrelated routes. Cancel with **Esc** or the local **Cancel** button.
+  The footer contains helper text only. Gameplay markers are temporarily
+  passive only while choosing a destination.
 - **Chaos Closed:** click an office and choose **Mark Closed**. A small × marks
   it. Closed contributes no outgoing traversal; Unknown means no confirmed
   route, not Closed. Unmarking restores retained known routes. Adding a route
-  reopens that office. Clear seed network removes routes, not Closed marks.
+  reopens that office. **Settings → Cannon network fallback → Clear seed network**
+  removes entered routes, not Closed marks. This fallback is collapsed by default.
 - **Kakkara start:** becomes effective only with Flammie Drum **In logic**, as
   in the Randomizer. Unknown Cannon routes never invent travel.
 
@@ -109,8 +113,8 @@ obtainable. Valid live RAM presence overrides configuration and session marks.
 
 Role overlays remain separate: the large icon is the physical character slot;
 the existing **?** overlay means an unidentified randomized role, not uncertain
-existence. Click a randomized slot for its role picker. Warrior/Light Mage/Dark
-Mage assignments drive existing caster logic without changing availability.
+existence. Click a randomized slot for its role picker. Boy/Girl/Sprite
+assignments drive existing caster logic without changing availability.
 
 ## Save states and manual marks
 
@@ -121,6 +125,34 @@ permanent check completion. Item manual marks are session-only; valid live
 character presence remains authoritative. Local configuration, routes, Closed
 marks, role identities, and Orb requirements persist. World schema v3 safely
 migrates v1/v2; intentionally retained legacy completion keys remain supported.
+
+## Independent chest audit
+
+Bundled PopTracker `locations.lua` maps separate events with `clearAll=false`:
+
+| Group | Independent chest events | Area total |
+| --- | --- | --- |
+| Pandora king room | 673, 67c, 683, 684, 685, 686 | 8 (six chests + two other checks) |
+| Moogle Village | 670, 676 | 2 |
+| North Town Castle double chest | 679, 68f | 5 (pair + three other checks) |
+| Elinee's Castle chests | 688, 689 | 2 |
+| Undine Cave | 581 only (`clearAll=true`) | 1, with two reward slots |
+
+Event numbers are hexadecimal. Numbered chest labels identify source events,
+not inferred physical sides or randomized contents. These splits increase
+logical checks from 68 to 76 without adding event bindings. Each chest inherits
+its original source access/visibility rules and tracks independently through
+RAM rollback or manual marking. An old permanent group completion migrates
+to all of its child chests; an individual child can then be undone separately.
+
+Clarified titles retain the original IDs/events: **Kakkara NPC - Sea Hare Tail
+Trade** describes the access requirement, not a guaranteed reward.
+**Tropical Town After Boss - Stove** is event 38c, the stove prize unlocked
+after Boreal Face. Source file/line evidence is in `source/provenance.json`.
+No suitable accepted Cannon artwork exists in the bundled assets, so the
+existing arrow symbol is retained. Display-only marker offsets separate
+Gaia's Navel office and Joch's Cave/Doppelgangers; Upper Land's Orb sits lower,
+left of Sprite Village. Gameplay mappings and travel regions are unchanged.
 
 ## Verification and limitations
 

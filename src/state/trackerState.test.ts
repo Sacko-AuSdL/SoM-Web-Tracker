@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { LEGACY_CHECK_SPLITS } from "../data/locationDefinitions";
 import {
   deriveEffectiveCheckState,
   emptyManualState,
@@ -19,6 +20,27 @@ class MemoryStorage implements Storage {
 }
 
 describe("generic completion state separation", () => {
+  it("migrates all old aggregate marks to their independent chests and deduplicates existing marks", () => {
+    const storage = new MemoryStorage();
+    storage.setItem("som-web-tracker:manual-state", JSON.stringify({ version: 1,
+      manualCompletedChecks: [...Object.keys(LEGACY_CHECK_SPLITS), "pandora-castle-chest-673", "potos-chest", "invalid", null] }));
+    const migrated = loadManualState(storage);
+    expect(new Set(migrated.manualCompletedChecks)).toEqual(new Set([...Object.values(LEGACY_CHECK_SPLITS).flat(), "potos-chest"]));
+    expect(migrated.manualCompletedChecks).toHaveLength(13);
+    const undone = setManualCompletion(migrated, "pandora-castle-chest-673", false);
+    expect(undone.manualCompletedChecks).toContain("pandora-castle-chest-67c");
+    expect(undone.manualCompletedChecks).not.toContain("pandora-castle-chest-673");
+    saveManualState(storage, undone);
+    expect(loadManualState(storage)).toEqual(undone);
+  });
+  it("persists an individual new chest mark without completing its siblings or inventory", () => {
+    const storage = new MemoryStorage(), ram = emptyRamState();
+    saveManualState(storage, setManualCompletion(emptyManualState(), "moogle-village-chest-670", true));
+    const restored = loadManualState(storage);
+    expect(deriveEffectiveCheckState("moogle-village-chest-670", ram, restored).complete).toBe(true);
+    expect(deriveEffectiveCheckState("moogle-village-chest-676", ram, restored).complete).toBe(false);
+    expect(ram.inventory["weapon-spear"]).toBeNull();
+  });
   it("keeps Potos RAM behavior unchanged", () => {
     const ram = emptyRamState();
     ram.checks["potos-chest"] = true;

@@ -2,7 +2,8 @@ import type { LocationDefinition } from "../domain/tracker";
 
 // Explicit stable IDs. PopTracker paths remain migration/debug metadata only.
 export const LOCATION_DEFINITIONS = [
-  { id: "elinees-castle-reward-chests-spikey-tiger", name: "Elinee's Castle Reward (Chests) - Spikey Tiger", legacyPath: "@Elinee's Castle/Elinee's Castle Reward (Chests) - Spikey Tiger", completionMode: "all", events: [{ eventNumber: 0x688 }, { eventNumber: 0x689 }] },
+  { id: "elinees-castle-chest-688", name: "Elinee's Castle Chest 1", legacyPath: "@Elinee's Castle/Elinee's Castle Reward (Chests) - Spikey Tiger", completionMode: "any", events: [{ eventNumber: 0x688 }] },
+  { id: "elinees-castle-chest-689", name: "Elinee's Castle Chest 2", legacyPath: "@Elinee's Castle/Elinee's Castle Reward (Chests) - Spikey Tiger", completionMode: "any", events: [{ eventNumber: 0x689 }] },
   { id: "dwarf-elder", name: "Dwarf Elder", legacyPath: "@Gaia's Navel/Dwarf Elder", completionMode: "any", events: [{ eventNumber: 0x366 }] },
   { id: "dwarf-village-boss-tropicallo", name: "Dwarf Village Boss - Tropicallo", legacyPath: "@Gaia's Navel/Dwarf Village Boss - Tropicallo", completionMode: "any", events: [{ eventNumber: 0x1b9 }] },
   { id: "earth-palace-mana-seed-fire-gigas", name: "Earth Palace Mana Seed - Fire Gigas", legacyPath: "@Gaia's Navel/Earth Palace Mana Seed - Fire Gigas", completionMode: "any", events: [{ eventNumber: 0x22e }] },
@@ -14,12 +15,12 @@ export const LOCATION_DEFINITIONS = [
   { id: "ice-castle-boss-2-frost-gigas", name: "Ice Castle Boss 2 - Frost Gigas", legacyPath: "@Ice Country/Ice Castle/Ice Castle Boss 2 - Frost Gigas", completionMode: "any", events: [{ eventNumber: 0x66d }] },
   { id: "ice-castle-chest", name: "Ice Castle Chest", legacyPath: "@Ice Country/Ice Castle/Ice Castle Chest", completionMode: "any", events: [{ eventNumber: 0x671 }] },
   { id: "santas-house-chest", name: "Santas House Chest", legacyPath: "@Ice Country/Santas House/Santas House Chest", completionMode: "any", events: [{ eventNumber: 0x67d }] },
-  { id: "salamando", name: "Salamando", legacyPath: "@Ice Country/Tropical Town/Tropical Town Boss - Boreal Face/Salamando", completionMode: "any", events: [{ eventNumber: 0x38c }] },
+  { id: "salamando", name: "Tropical Town After Boss - Stove", legacyPath: "@Ice Country/Tropical Town/Tropical Town Boss - Boreal Face/Salamando", completionMode: "any", events: [{ eventNumber: 0x38c }] },
   { id: "fire-palace-after-little-maze", name: "Fire Palace After Little Maze", legacyPath: "@Kakkara Desert/Fire Palace/Fire Palace After Little Maze", completionMode: "any", events: [{ eventNumber: 0x678 }] },
   { id: "fire-palace-near-entrance-chest", name: "Fire Palace Near Entrance Chest", legacyPath: "@Kakkara Desert/Fire Palace/Fire Palace Near Entrance Chest", completionMode: "any", events: [{ eventNumber: 0x68a }] },
   { id: "fire-palace-near-orb-2", name: "Fire Palace Near Orb 2", legacyPath: "@Kakkara Desert/Fire Palace/Fire Palace Near Orb 2", completionMode: "any", events: [{ eventNumber: 0x68b }] },
   { id: "fire-palace-reward-minotaur", name: "Fire Palace Reward - Minotaur", legacyPath: "@Kakkara Desert/Fire Palace/Fire Palace Reward - Minotaur", completionMode: "any", events: [{ eventNumber: 0x589 }] },
-  { id: "kakkara-npc", name: "Kakkara NPC", legacyPath: "@Kakkara Desert/Kakkara/Kakkara NPC", completionMode: "any", events: [{ eventNumber: 0x2b2, completedValue: 2 }] },
+  { id: "kakkara-npc", name: "Kakkara NPC - Sea Hare Tail Trade", legacyPath: "@Kakkara Desert/Kakkara/Kakkara NPC", completionMode: "any", events: [{ eventNumber: 0x2b2, completedValue: 2 }] },
   { id: "moon-palace-seed", name: "Moon Palace Seed", legacyPath: "@Kakkara Desert/Moon Palace/Moon Palace Seed", completionMode: "any", events: [{ eventNumber: 0x584 }] },
   { id: "lighthouse-npc", name: "Lighthouse NPC", legacyPath: "@Lighthouse/Lighthouse NPC", completionMode: "any", events: [{ eventNumber: 0x0aa }] },
   { id: "doppelgangers", name: "Doppelgangers", legacyPath: "@Lofty Mountains/Joch's Cave/Doppelgangers", completionMode: "any", events: [{ eventNumber: 0x4e5 }] },
@@ -36,7 +37,12 @@ export const LOCATION_DEFINITIONS = [
   { id: "undersea-palace-chest", name: "Undersea Palace Chest", legacyPath: "@Lost Continent/Undersea Palace/Undersea Palace Chest", completionMode: "any", events: [{ eventNumber: 0x691 }] },
   { id: "mana-fortress-boss-1-buffy", name: "Mana Fortress Boss 1 - Buffy", legacyPath: "@Mana Fortress/Mana Fortress Boss 1 - Buffy", completionMode: "any", events: [{ eventNumber: 0x422 }] },
   { id: "mana-fortress-boss-2-dread-slime", name: "Mana Fortress Boss 2 - Dread Slime", legacyPath: "@Mana Fortress/Mana Fortress Boss 2 - Dread Slime", completionMode: "any", events: [{ eventNumber: 0x425 }] },
-  { id: "pandora-castle-chests", name: "Pandora Castle Chests", legacyPath: "@Pandora/Pandora Castle Chests", completionMode: "all", events: [{ eventNumber: 0x673 }, { eventNumber: 0x67c }, { eventNumber: 0x683 }, { eventNumber: 0x684 }, { eventNumber: 0x685 }, { eventNumber: 0x686 }] },
+  { id: "pandora-castle-chest-673", name: "Pandora Castle Chest 1", legacyPath: "@Pandora/Pandora Castle Chests", completionMode: "any", events: [{ eventNumber: 0x673 }] },
+  { id: "pandora-castle-chest-67c", name: "Pandora Castle Chest 2", legacyPath: "@Pandora/Pandora Castle Chests", completionMode: "any", events: [{ eventNumber: 0x67c }] },
+  { id: "pandora-castle-chest-683", name: "Pandora Castle Chest 3", legacyPath: "@Pandora/Pandora Castle Chests", completionMode: "any", events: [{ eventNumber: 0x683 }] },
+  { id: "pandora-castle-chest-684", name: "Pandora Castle Chest 4", legacyPath: "@Pandora/Pandora Castle Chests", completionMode: "any", events: [{ eventNumber: 0x684 }] },
+  { id: "pandora-castle-chest-685", name: "Pandora Castle Chest 5", legacyPath: "@Pandora/Pandora Castle Chests", completionMode: "any", events: [{ eventNumber: 0x685 }] },
+  { id: "pandora-castle-chest-686", name: "Pandora Castle Chest 6", legacyPath: "@Pandora/Pandora Castle Chests", completionMode: "any", events: [{ eventNumber: 0x686 }] },
   { id: "pandora-castle-girl", name: "Pandora Castle Girl", legacyPath: "@Pandora/Pandora Castle Girl", completionMode: "any", events: [{ eventNumber: 0x188 }] },
   { id: "pandora-ruins-boss-wall-face", name: "Pandora Ruins Boss - Wall Face", legacyPath: "@Pandora/Pandora Ruins Boss - Wall Face", completionMode: "any", events: [{ eventNumber: 0x16e }] },
   { id: "mantis-ant", name: "Mantis Ant", legacyPath: "@Potos/Potos Boss - Mantis Ant", completionMode: "any", events: [{ eventNumber: 0x112 }] },
@@ -53,13 +59,15 @@ export const LOCATION_DEFINITIONS = [
   { id: "turtle-island-npc", name: "Turtle Island NPC", legacyPath: "@Turtle Island/Turtle Island NPC", completionMode: "any", events: [{ eventNumber: 0x2f9 }] },
   { id: "flammie-great-viper", name: "Flammie - Great Viper", legacyPath: "@Upper Land/Matango/Flammie - Great Viper", completionMode: "any", events: [{ eventNumber: 0x4e4 }] },
   { id: "matango-palace-chest", name: "Matango Palace Chest", legacyPath: "@Upper Land/Matango/Matango Palace Chest", completionMode: "any", events: [{ eventNumber: 0x692 }] },
-  { id: "moogle-village-double-chest", name: "Moogle Village Double Chest", legacyPath: "@Upper Land/Moogle Village/Moogle Village Double Chest", completionMode: "all", events: [{ eventNumber: 0x670 }, { eventNumber: 0x676 }] },
+  { id: "moogle-village-chest-670", name: "Moogle Village Chest 1", legacyPath: "@Upper Land/Moogle Village/Moogle Village Double Chest", completionMode: "any", events: [{ eventNumber: 0x670 }] },
+  { id: "moogle-village-chest-676", name: "Moogle Village Chest 2", legacyPath: "@Upper Land/Moogle Village/Moogle Village Double Chest", completionMode: "any", events: [{ eventNumber: 0x676 }] },
   { id: "wind-palace-reward-spring-beak", name: "Wind Palace Reward - Spring Beak", legacyPath: "@Upper Land/Sprite Village/Wind Palace Reward - Spring Beak", completionMode: "any", events: [{ eventNumber: 0x4e2 }] },
   { id: "gold-tower-chest-1", name: "Gold Tower Chest 1", legacyPath: "@Vandole Empire/Gold City/Gold Tower/Gold Tower Chest 1", completionMode: "any", events: [{ eventNumber: 0x67b }] },
   { id: "gold-tower-chest-2-blue-spike", name: "Gold Tower Chest 2 - Blue Spike", legacyPath: "@Vandole Empire/Gold City/Gold Tower/Gold Tower Chest 2 - Blue Spike", completionMode: "any", events: [{ eventNumber: 0x677 }] },
   { id: "gold-tower-reward-gorgon-bull", name: "Gold Tower Reward - Gorgon Bull", legacyPath: "@Vandole Empire/Gold City/Gold Tower/Gold Tower Reward - Gorgon Bull", completionMode: "any", events: [{ eventNumber: 0x587 }] },
   { id: "castle-chest", name: "Castle Chest", legacyPath: "@Vandole Empire/North Town/North Town Castle/Castle Chest", completionMode: "any", events: [{ eventNumber: 0x68d }] },
-  { id: "castle-double-chest", name: "Castle Double Chest", legacyPath: "@Vandole Empire/North Town/North Town Castle/Castle Double Chest", completionMode: "all", events: [{ eventNumber: 0x679 }, { eventNumber: 0x68f }] },
+  { id: "north-town-castle-paired-chest-679", name: "North Town Castle Paired Chest 1", legacyPath: "@Vandole Empire/North Town/North Town Castle/Castle Double Chest", completionMode: "any", events: [{ eventNumber: 0x679 }] },
+  { id: "north-town-castle-paired-chest-68f", name: "North Town Castle Paired Chest 2", legacyPath: "@Vandole Empire/North Town/North Town Castle/Castle Double Chest", completionMode: "any", events: [{ eventNumber: 0x68f }] },
   { id: "inside-boss-metal-mantis", name: "Inside Boss - Metal Mantis", legacyPath: "@Vandole Empire/North Town/North Town Castle/Inside Boss - Metal Mantis", completionMode: "any", events: [{ eventNumber: 0x527 }] },
   { id: "outside-boss-mech-rider-ii", name: "Outside Boss - Mech Rider II", legacyPath: "@Vandole Empire/North Town/North Town Castle/Outside Boss - Mech Rider II", completionMode: "any", events: [{ eventNumber: 0x52f }] },
   { id: "north-town-ruins-boss-1-dooms-wall", name: "North Town Ruins Boss 1 - Doom's Wall", legacyPath: "@Vandole Empire/North Town/North Town Ruins/North Town Ruins Boss 1 - Doom's Wall", completionMode: "any", events: [{ eventNumber: 0x553 }] },
@@ -73,6 +81,15 @@ export const LOCATION_DEFINITIONS = [
 ] as const satisfies readonly LocationDefinition[];
 
 export type LocationId = (typeof LOCATION_DEFINITIONS)[number]["id"];
+
+// Old permanent aggregate marks meant the whole group was complete. Preserve
+// that intent for every independent chest; new chest marks remain independent.
+export const LEGACY_CHECK_SPLITS = {
+  "elinees-castle-reward-chests-spikey-tiger": ["elinees-castle-chest-688", "elinees-castle-chest-689"],
+  "pandora-castle-chests": ["pandora-castle-chest-673", "pandora-castle-chest-67c", "pandora-castle-chest-683", "pandora-castle-chest-684", "pandora-castle-chest-685", "pandora-castle-chest-686"],
+  "moogle-village-double-chest": ["moogle-village-chest-670", "moogle-village-chest-676"],
+  "castle-double-chest": ["north-town-castle-paired-chest-679", "north-town-castle-paired-chest-68f"],
+} as const satisfies Record<string, readonly LocationId[]>;
 
 export const LOCATION_BY_ID = new Map<LocationId, (typeof LOCATION_DEFINITIONS)[number]>(
   LOCATION_DEFINITIONS.map((definition) => [definition.id, definition]),

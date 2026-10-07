@@ -1,5 +1,5 @@
 import { INVENTORY_DEFINITIONS, type InventoryId } from "../data/inventoryDefinitions";
-import { LOCATION_BY_ID, LOCATION_DEFINITIONS, type LocationId } from "../data/locationDefinitions";
+import { LEGACY_CHECK_SPLITS, LOCATION_BY_ID, LOCATION_DEFINITIONS, type LocationId } from "../data/locationDefinitions";
 import type { InventoryValue } from "../domain/tracker";
 import { emptyOrbRamState, type OrbRamState } from "../autotracking/OrbAutotracker";
 
@@ -64,9 +64,11 @@ export function loadManualState(storage: Storage): PersistentManualState {
       if (parsed.version === 1 && Array.isArray(parsed.manualCompletedChecks)) {
         return {
           version: 1,
-          manualCompletedChecks: parsed.manualCompletedChecks.filter(
-            (id): id is LocationId => typeof id === "string" && LOCATION_BY_ID.has(id as LocationId),
-          ),
+          manualCompletedChecks: [...new Set(parsed.manualCompletedChecks.flatMap((id): LocationId[] => {
+            if (typeof id !== "string") return [];
+            if (Object.hasOwn(LEGACY_CHECK_SPLITS, id)) return [...LEGACY_CHECK_SPLITS[id as keyof typeof LEGACY_CHECK_SPLITS]];
+            return LOCATION_BY_ID.has(id as LocationId) ? [id as LocationId] : [];
+          }))],
         };
       }
     }

@@ -19,7 +19,10 @@ if (overworld?.img !== "images/overworld_map.png") {
 const image = readFileSync(resolve(projectRoot, "src/assets/poptracker/overworld_map.png"));
 const width = image.readUInt32BE(16);
 const height = image.readUInt32BE(20);
-const checksByPath = new Map(LOCATION_DEFINITIONS.map((check) => [check.legacyPath, check]));
+const checksByPath = new Map();
+for (const check of LOCATION_DEFINITIONS) {
+  checksByPath.set(check.legacyPath, [...(checksByPath.get(check.legacyPath) ?? []), check]);
+}
 const matched = new Set();
 const groups = [];
 const unmatchedSections = [];
@@ -49,9 +52,9 @@ function visit(nodes, path = [], inheritedAccess = [], inheritedVisibility = [])
         }
         if (!section.item_count) continue;
         const legacyPath = `@${[...areaPath, section.name].join("/")}`;
-        const check = checksByPath.get(legacyPath);
-        if (!check) unmatchedSections.push(legacyPath);
-        else {
+        const sectionChecks = checksByPath.get(legacyPath);
+        if (!sectionChecks) unmatchedSections.push(legacyPath);
+        else for (const check of sectionChecks) {
           checks.push(check.id);
           matched.add(check.id);
           checkRules.push({ id: check.id, accessTiers: sectionAccess, visibilityTiers: sectionVisibility });

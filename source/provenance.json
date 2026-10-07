@@ -4,7 +4,9 @@
     "copyright": "2020-2023 Cyb3R",
     "notice": "public/POPTRACKER_LICENSE.txt",
     "images": "src/assets/poptracker",
-    "snapshots": ["poptracker/locations/locations.json", "poptracker/locations/hints.json", "poptracker/maps/maps.json"],
+    "snapshots": ["poptracker/locations/locations.json", "poptracker/locations/hints.json", "poptracker/maps/maps.json", "poptracker/locations.lua"],
+    "eventSnapshotOrigin": "scripts/autotracking/locations.lua (unchanged)",
+    "independentChestEvidence": "EVENT_MAPPING clearAll=false: Pandora 673/67c/683/684/685/686; Moogle 670/676; North Town Castle 679/68f; Elinee 688/689. Undine has only 581 with clearAll=true.",
     "copyPolicy": "Accepted existing files copied unchanged; no new third-party assets",
     "underlyingArtwork": "Game artwork rights are separate from the package MIT notice"
   },
@@ -16,6 +18,11 @@
     "defaults": { "opStartChar": "boy", "opCharacters": "findbothL1" },
     "seedSpecificIdentities": ["opStartChar=random", "start1only", "start1find1", "find1L1", "find1CL"],
     "runtimeDependency": false
+  },
+  "checkTitleEvidence": {
+    "randomizerVersion": "1.49",
+    "kakkara": "OpenWorldLocations.cs:125 / PrizeEvents.cs:460-467: event 2b2 reward requires Sea Hare Tail, not a guaranteed Sea Hare Tail reward",
+    "tropicalTown": "PrizeEvents.cs:469-476 / OpenWorldSupportingEvents.cs:650-657 / OpenWorldSupportingMapChanges.cs:225-238: event 38c is the stove prize, unlocked after Boreal Face"
   },
   "font": { "name": "Manaspace", "author": "codeman38 / zone38", "notice": "public/fonts/license.txt" }
 }

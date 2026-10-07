@@ -12,6 +12,7 @@ import {
 } from "./PotosAutotracker";
 import { LocationAutotracker } from "./LocationAutotracker";
 import type { LocationDefinition } from "../domain/tracker";
+import { LOCATION_DEFINITIONS } from "../data/locationDefinitions";
 
 type Listener = (event: { data?: string | ArrayBuffer }) => void;
 
@@ -154,6 +155,33 @@ function waitForTrackerSnapshot(
 }
 
 describe("SniClient usb2snes flow", () => {
+  it("autotracks independent Pandora chest events and rolls one back without completing its sibling", async () => {
+    vi.stubGlobal("WebSocket", MockWebSocket);
+    const definitions = LOCATION_DEFINITIONS.filter((check) => check.legacyPath === "@Pandora/Pandora Castle Chests");
+    definitions.forEach((check, index) => {
+      const address = 0xe15000 + index * 16;
+      mockMemory.set(0x216b53 + check.events[0].eventNumber * 3,
+        new Uint8Array([address & 0xff, (address >> 8) & 0xff, address >> 16]));
+      mockMemory.set(address - 0xc00000, new Uint8Array([0x30, 0x90 + index, 0x01, 0x00]));
+      mockMemory.set(0xf5cf90 + index, new Uint8Array([index === 0 ? 1 : 0]));
+    });
+    const client = new SniClient("ws://mock-sni:23074"); client.start();
+    try {
+      await waitForAttached(client);
+      const tracker = new LocationAutotracker(client, definitions);
+      const first = await tracker.poll();
+      expect(first.checks["pandora-castle-chest-673"]).toBe(true);
+      expect(first.checks["pandora-castle-chest-67c"]).toBe(false);
+      expect(Object.values(first.checks).filter(Boolean)).toHaveLength(1);
+      mockMemory.set(0xf5cf90, new Uint8Array([0]));
+      mockMemory.set(0xf5cf91, new Uint8Array([1]));
+      const changed = await tracker.poll();
+      expect(changed.checks["pandora-castle-chest-673"]).toBe(false);
+      expect(changed.checks["pandora-castle-chest-67c"]).toBe(true);
+      expect(Object.values(changed.checks).filter(Boolean)).toHaveLength(1);
+      expect(Object.values(changed.diagnostics).every((entry) => entry.error === null)).toBe(true);
+    } finally { client.stop(); }
+  });
   it("tracks Orb open-state and rollback through the mock socket, isolating failed Orb reads", async () => {
     vi.stubGlobal("WebSocket", MockWebSocket);
     let failOrbRead = false;
