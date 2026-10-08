@@ -114,8 +114,7 @@ describe("directed Cannon map editing", () => {
     expect(screen.queryByRole("button", { name: "Edit Cannons" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Potos Cannon Office" }));
     expect(screen.queryByRole("heading", { name: "Potos" })).toBeNull();
-    expect(document.querySelector(".orb-anchor")?.hasAttribute("inert")).toBe(false);
-    fireEvent.click(screen.getByRole("button", { name: "Add route" }));
+    expect(screen.queryByRole("button", { name: "Add route" })).toBeNull();
     expect(document.querySelector(".orb-anchor")?.hasAttribute("inert")).toBe(true);
     expect(document.querySelector(".cannon-anchor")?.hasAttribute("inert")).toBe(false);
     expect(document.querySelector(".map-viewport .cannon-status")).toBeNull();
@@ -135,7 +134,6 @@ describe("directed Cannon map editing", () => {
     }
     render(<Harness />);
     fireEvent.click(screen.getByRole("button", { name: "Kakkara Cannon Office" }));
-    fireEvent.click(screen.getByRole("button", { name: "Add route" }));
     fireEvent.click(screen.getByRole("button", { name: "Ice Country Cannon Office" }));
     expect(screen.getByRole("button", { name: "Cannon route Kakkara to Ice Country" })).toBeDefined();
     expect(document.querySelectorAll(".cannon-line")).toHaveLength(1);
@@ -149,7 +147,6 @@ describe("directed Cannon map editing", () => {
     fireEvent.keyDown(route, { key: "Enter" });
     expect(document.querySelectorAll(".cannon-line")).toHaveLength(0);
     fireEvent.click(screen.getByRole("button", { name: "Potos Cannon Office" }));
-    fireEvent.click(screen.getByRole("button", { name: "Add route" }));
     fireEvent.click(screen.getByRole("button", { name: "Kakkara Cannon Office" }));
     fireEvent.click(screen.getByRole("button", { name: "Cannon route Potos to Kakkara" }));
     expect(document.querySelectorAll(".cannon-line")).toHaveLength(0);

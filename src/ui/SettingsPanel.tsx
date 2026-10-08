@@ -122,9 +122,8 @@ export function SettingsPanel({ sni, onSelectDevice, world, onUpdateSetting, onS
               <button type="button" disabled={!world.cannonConnections.length} onClick={onClearCannonNetwork}>Clear seed network</button>
             </details>}
           <details className="marker-legend"><summary>Map marker legend</summary>
-            <ul><li>Green +: reachable / available</li><li>Red ×: blocked / unreachable</li>
-              <li>Grey ✓: completed</li><li>Amber ?: unknown</li>
-              <li>Amber ◐: partial / mixed known and uncertain access</li></ul>
+            <ul><li>Green square: reachable / available</li><li>Dark red square: blocked / unreachable</li>
+              <li>Grey square: completed</li><li>Amber square: unknown / partial access</li></ul>
           </details>
           <label className="field-label" htmlFor="sni-device">SNI device</label>
           <select id="sni-device" value={sni.attachedDevice ?? ""} disabled={sni.devices.length === 0}

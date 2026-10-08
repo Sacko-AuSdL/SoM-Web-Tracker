@@ -33,8 +33,17 @@
   "cannonIconSearch": {
     "sourceProject": "SecretOfManaRandomizer/SoMRandomizer (read-only, 1.49)",
     "resourcesReviewed": ["Properties/Resources.resx", "SoMRandomizer.csproj", "Resources/sprite_boy.png", "Resources/sprite_girl.png", "Resources/sprite_sprite.png", "Resources/backdrop_*.png", "Resources/customMaps", "Resources/mapPalettes", "sprite/NPC/Canoni/Cannon filenames and source references"],
-    "result": "No suitable local Canoni/Cannon NPC sprite or sheet found. Existing generic arrow marker retained; no image downloaded or extracted."
+    "result": "Historical read-only search found no suitable sprite. Search stopped; Cannon Offices now use an original inline vector cannon in src/ui/CannonLayer.tsx. No image downloaded or extracted."
   },
-  "displayPositions": { "earthPalaceOrb": "28 screen pixels below unchanged Gaia source coordinate", "gaiasNavelCannon": "Original CannonTravelModel coordinate (0x7f, 0xc2)*16; 36px smooth display shift left at scale <=0.12, fading to zero by 0.35; shared by pins/routes", "upperLandOrb": "Existing display position (1770,2505) reviewed and retained, left of Sprite Village" },
+  "sandship": {
+    "source": "Read-only local SecretOfManaRandomizer/SoMRandomizer Open World extension; source license LGPL-2.1, no runtime dependency or wholesale source copy",
+    "files": ["processing/openworld/events/SandshipEvents.cs", "processing/openworld/events/InitialEventFlagStates.cs", "processing/common/EventFlags.cs", "processing/common/structure/EventScript.cs", "processing/common/EventCommandEnum.cs", "processing/openworld/events/PrizeEvents.cs", "processing/openworld/randomization/OpenWorldPrizes.cs", "processing/openworld/randomization/OpenWorldResultInjector.cs", "processing/openworld/randomization/OpenWorldLocationPrizeMatcher.cs", "processing/openworld/randomization/OpenWorldLocations.cs", "processing/openworld/cannon/CannonTravelRegions.cs", "processing/openworld/PlandoProperties.cs", "processing/hacks/openworld/Plando.cs", "processing/openworld/events/HintEvents.cs", "processing/openworld/randomization/OpenWorldHints.cs", "processing/common/BossSwaps.cs", "processing/common/VanillaBossMaps.cs", "processing/common/RomGenerator.cs", "processing/hacks/openworld/CrystalOrbWeaponBreaking.cs", "processing/hacks/openworld/FastWhipPosts.cs"],
+    "captain": "sandship-captain; p_Sandship-Captain; Admiral Meria, map 91 object 1, event 2A3; seed-dependent normal acquired prize flag, not boss flag 28 or test-plando Sea Hare Tail",
+    "boss": "Existing Mech Rider 1 slot; death 2A1 calls fixed Weapon Orb event 504 then sets flag 28 to F; WRAM 7ECF28, equality F only",
+    "morie": "sandship-morie-hint; map 91 object 0, event 2A2; repeatable dialogue with no read flag; additive manual read persistence",
+    "compatibility": "Version 1.49 is shared with older builds. Read relocated event pointers and require full 28A/2A1 and post-boss guard/dialogue 2A3/2A2 signatures; unavailable/unsupported inactive; totals derived from active definitions",
+    "report": "verification/sandship-source-and-verification.md"
+  },
+  "displayPositions": { "sandship": "Approximate regional map position (660,1690), south of Kakkara (660,1484)", "underseaPalace": "Display-only screen offset (-8,+8), unchanged source coordinate (3400,3575)", "earthPalaceOrb": "28 screen pixels below unchanged Gaia source coordinate", "gaiasNavelCannon": "Original CannonTravelModel coordinate (0x7f, 0xc2)*16; 36px smooth display shift left at scale <=0.12, fading to zero by 0.35; shared by pins/routes", "upperLandOrb": "Existing display position (1770,2505) reviewed and retained, left of Sprite Village" },
   "font": { "name": "Manaspace", "author": "codeman38 / zone38", "file": "public/fonts/manaspc.ttf", "notice": "public/fonts/license.txt", "scope": "Original font terms retained, not repository MIT" }
 }

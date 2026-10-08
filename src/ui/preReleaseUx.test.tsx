@@ -13,6 +13,7 @@ import { ORB_SOURCE_DEFINITIONS } from "../data/sourceWorldData";
 import { MAP_AREAS } from "../data/mapAreas";
 import { LOCATION_BY_ID } from "../data/locationDefinitions";
 import type { InventoryMode } from "../state/uiPreferences";
+import { HINT_MAP_MARKERS } from "../data/hintMarkers";
 
 afterEach(cleanup);
 describe("pre-release inventory layouts", () => {
@@ -46,6 +47,21 @@ describe("pre-release inventory layouts", () => {
   });
 });
 describe("pre-release map presentation", () => {
+  it("keeps Morie's new hint clear of the nearby Kakkara Cannon at fit scales", () => {
+    const hint = HINT_MAP_MARKERS.find((entry) => entry.id === "sandship-morie-hint")!;
+    for (const scale of [.08, .12]) {
+      const view = { scale, x: 0, y: 0 };
+      const pin = worldToScreen(view, hint.x, hint.y, hint.screenOffset.x, hint.screenOffset.y);
+      const cannon = cannonToScreen(view, CANNON_OFFICE_BY_ID.get("kakkara")!);
+      expect(Math.hypot(pin.left - cannon.left, pin.top - cannon.top)).toBeGreaterThan(22);
+    }
+  });
+  it("moves Undersea Palace slightly left/down without changing its source coordinate or checks", () => {
+    const area = MAP_AREAS.find((entry) => entry.id === "lost-continent-undersea-palace")!;
+    expect([area.x, area.y]).toEqual([3400, 3575]);
+    expect(area.screenOffset).toEqual({ x: -8, y: 8 });
+    expect(area.checkIds).toEqual(["undersea-palace-chest", "undersea-palace-boss-hydra", "undergound-city-boss-kettle-kin"]);
+  });
   it("keeps the original Gaia coordinate and smoothly removes declutter when zoomed in", () => {
     const point = CANNON_OFFICE_BY_ID.get("gaiasNavel")!;
     expect([point.x, point.y, point.region]).toEqual([0x7f * 16, 0xc2 * 16, "potos"]);
@@ -75,14 +91,15 @@ describe("pre-release map presentation", () => {
     expect(check.events).toEqual([{ eventNumber: 0x587 }]);
     expect(check.legacyPath).toContain("Gold Tower Reward - Gorgon Bull");
   });
-  it("hover targets a new office; Add hides every popup until destination or cancellation", () => {
+  it("hover targets a new office; source click hides every popup until destination or cancellation", () => {
     const world = emptyWorldState(); world.settings.cannonMode = "shuffle";
     const onAction = vi.fn();
     render(<CannonLayer world={world} view={{ scale: .1, x: 0, y: 0 }} onAction={onAction} />);
-    fireEvent.click(screen.getByRole("button", { name: "Potos Cannon Office" }));
+    fireEvent.mouseEnter(screen.getByRole("button", { name: "Potos Cannon Office" }));
     fireEvent.mouseEnter(screen.getByRole("button", { name: "Kakkara Cannon Office" }));
     expect(screen.getByRole("region", { name: "Kakkara Cannon controls" })).toBeDefined();
-    fireEvent.click(screen.getByRole("button", { name: "Add route" }));
+    expect(screen.queryByRole("button", { name: "Add route" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Kakkara Cannon Office" }));
     fireEvent.mouseEnter(screen.getByRole("button", { name: "Potos Cannon Office" }));
     expect(screen.queryByRole("region")).toBeNull();
     expect(document.querySelectorAll(".cannon-pin.target:not(:disabled)")).toHaveLength(8);

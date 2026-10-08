@@ -40,7 +40,8 @@ The tracker reads emulator memory; it does not write game state.
 
 ## Using the tracker
 
-Tracks 76 independent standard checks (76 event bindings), 40 inventory values,
+Tracks 76 independent standard checks, or 77 when a compatible Sandship build
+is detected, 40 inventory values,
 and 14 persistent Crystal Orb cleared states. Check counts refer to underlying
 checks, not reward slots. Water Palace and Undine Cave are separate areas;
 Undine's Biting Lizard is one check with two reward slots.
@@ -60,6 +61,26 @@ so saved Normal/Compact preferences survive and Square persists on reload.
 Weapon numbers are weapon-orb stages, not weapon power. Settings and layout
 preferences are stored in this browser. They are not isolated by ROM/seed:
 review or reset manual entries when changing seeds.
+
+## Sandship (compatible builds)
+
+Sandship appears south of Kakkara only when the connected ROM contains the
+verified Open World extension. The tracker recognizes its patched events
+automatically; older seeds stay at 76 checks. Version/options string 1.49 alone
+does not enable it. Until compatibility is known, Sandship is hidden.
+
+The **Captain** is one randomized Prize check. Defeating the boss opens access
+to the Captain and **Morie Hint**, but does not complete the Captain's check.
+The fixed boss Weapon Orb reward remains separate, in ordinary inventory RAM.
+Boss clear and Captain claim follow save states. Captain supports the same
+permanent manual completion as other checks. Morie is repeatable and has no
+game hint-read flag: its **Mark hint read/unread** control persists in this
+browser, independently of RAM. Hint text is not inferred or entered.
+
+Sandship adds no gate beyond the existing Kakkara travel route; Captain/Morie
+also require boss victory. Debug exposes compatibility, boss RAM and isolated
+errors. See [source findings and live retest](verification/sandship-source-and-verification.md)
+for technical details and the remaining emulator/visual verification.
 
 ## Randomizer Options String
 
@@ -83,10 +104,12 @@ seed-specific Orb requirements, Cannon routes, or rolled character roles.
   layer shows offices without editing or a route mesh.
 - **Open Cannons:** automatic deterministic travel, without a 56-edge display
   or route-selection UI.
-- **Shuffle / Chaos:** enable **Cannons**, hover/click an office for its compact
-  local controls. **Hover = inspect; click = act.** Choose **Add route** or
-  **Replace**: the popup closes immediately and the map fits to show all valid
-  destinations with green outlines (the orange source cannot target itself).
+- **Shuffle / Chaos:** enable **Cannons**. Click an office to select the source
+  immediately, then click a destination to add its directed route. Hover/focus
+  an office for management controls (no Add route button). **Replace** starts
+  target selection for that exact edge. The popup closes immediately and the
+  map fits to show valid destinations with green outlines. Clicking the orange
+  source again cancels; it cannot target itself.
   Click a destination to finish. Replace/remove outgoing routes at the office; clicking a visible
   route directly removes only that directed edge. All entered routes stay
   visible; reverse routes are never inferred. Hover an office to highlight
@@ -94,7 +117,7 @@ seed-specific Orb requirements, Cannon routes, or rolled character roles.
   and dim unrelated routes. Cancel with **Esc** or the small **Cancel route** button.
   The footer contains helper text only. Gameplay markers are temporarily
   passive only while choosing a destination.
-- **Chaos Closed:** click an office and choose **Mark Closed**. A small × marks
+- **Chaos Closed:** hover/focus an office and choose **Mark Closed**. A small × marks
   it. Closed contributes no outgoing traversal; Unknown means no confirmed
   route, not Closed. Unmarking restores retained known routes. Adding a route
   reopens that office. **Settings → Cannon network fallback → Clear seed network**
@@ -161,18 +184,18 @@ Lumina prize source, with two reward slots in the Randomizer; it does not imply
 guaranteed randomized contents. IDs, events and legacy manual marks are unchanged.
 Source file/line evidence is in `source/provenance.json`.
 
-The local Randomizer resources, resource manifest, project resource inventory,
-and NPC/sprite/Cannon references were searched read-only. They contain character
-sprites but no suitable Canoni/Cannon NPC sprite or sheet. The generic arrow
-is retained; no web asset was used. Gaia's Cannon keeps its original logical
+Offices use a compact original vector cannon symbol; no Canoni sprite, external
+image or new copyrighted artwork is used. Gaia's Cannon keeps its original logical
 coordinate with a smooth leftward display offset at fit scale, fading out when
 zooming in. Earth Palace Orb is displayed below Gaia; Upper Land's existing
 lower, left-of-Sprite-Village placement was reviewed and retained. Joch's Cave
-remains separated from Dark Palace. Gameplay mappings/travel regions are unchanged.
+remains separated from Dark Palace. Undersea Palace moves only 8 display pixels
+left/down; its source coordinate and gameplay mappings are unchanged.
 
-**Settings → Map marker legend** explains the centered symbols: green **+**
-reachable/available, red **×** blocked, grey **✓** completed, amber **?** unknown,
-amber **◐** partial/mixed access. The legend adds no map overlay clutter.
+Normal check squares are color-only, without inner glyphs:
+green reachable/available, dark red blocked, grey completed, amber unknown or
+partial. **Settings → Map marker legend** explains these colors. Orbs, Cannon
+and Hint symbols remain distinct.
 
 ## Verification and limitations
 
