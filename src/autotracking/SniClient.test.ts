@@ -166,7 +166,7 @@ describe("SniClient usb2snes flow", () => {
         bytes.push(0x42, claimFlag, 0x1f, 0x13, 0x96);
         // OpenWorldPrizes.cs: weapon acquisition increments both stage/ownership;
         // the first (C2) is NOT the persistent acquired flag (CA).
-        if (claimFlag === 0xca) bytes.push(0x2b, 0x92, 0x29, 0xc2, 0x29, claimFlag, 0x08, 0x08, 0x2f, 0x44, 0x00);
+        if (claimFlag === 0xca) bytes.push(0x1e, 0x92, 0x29, 0xc2, 0x29, claimFlag, 0x1f, 0x08, 0x2f, 0x44, 0x00);
         else bytes.push(0x30, claimFlag, 0x01, 0x00);
       }
       mockMemory.set(pointer - 0xc00000, new Uint8Array(bytes));
