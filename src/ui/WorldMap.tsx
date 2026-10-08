@@ -116,6 +116,11 @@ export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck,
   };
   const position = (x: number, y: number, dx = 0, dy = 0) => worldToScreen(view, x, y, dx, dy);
   const isOpen = (kind: Layer, id: string) => open?.kind === kind && open.id === id;
+  // Display-only boss status: no LocationId, manual mark, or counted prize.
+  const bossMarkerId = "sandship-boss";
+  const bossCoords = position(SANDSHIP.x, SANDSHIP.y, 48, -24);
+  const bossStatus = ram.sandship.bossDefeated === null ? "unknown" : ram.sandship.bossDefeated ? "completed" : "unreachable";
+  const bossLabel = ram.sandship.bossDefeated === null ? "unknown" : ram.sandship.bossDefeated ? "defeated" : "not defeated";
   return <section className="map-panel" aria-label="World map">
     <div className="panel-heading map-heading">
       <div><span className="eyebrow">OVERWORLD</span><h2>World map</h2></div>
@@ -144,12 +149,15 @@ export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck,
       {/* Area, Orb, hint and directed Cannon overlays share one transform. */}
       {layers.checks && size.width > 0 && areas.map((area) => {
         const progress = evaluateArea(area, context, manual);
+        const captain = area.id === SANDSHIP.areaId ? evaluateCheck(SANDSHIP.captainId, context, manual) : null;
+        const markerName = captain ? SANDSHIP.captainName : area.name;
+        const markerStatus = captain ? captain.complete ? "completed" : captain.access === "checkable" ? "partial" : captain.access : progress.status;
         const coords = position(area.x, area.y, area.screenOffset?.x, area.screenOffset?.y);
         return <div key={area.id} inert={cannonEditActive} className={`map-anchor${isOpen("checks", area.id) ? " open" : ""}`}
           style={coords} {...markerHandlers("checks", area.id)}>
-          <button type="button" className={`map-pin pin-${progress.status}`} onClick={() => togglePin("checks", area.id)}
-            aria-label={`${area.name}: ${progress.status}, ${progress.completed} of ${progress.total} complete`}
-            aria-expanded={isOpen("checks", area.id)} title={area.name}>
+          <button type="button" className={`map-pin pin-${markerStatus}`} onClick={() => togglePin("checks", area.id)}
+            aria-label={`${markerName}: ${markerStatus}, ${progress.completed} of ${progress.total} complete`}
+            aria-expanded={isOpen("checks", area.id)} title={markerName}>
           </button>
           {isOpen("checks", area.id) && <div className="map-popover" style={popupStyle(coords.left, coords.top)}>
             <button type="button" className="popover-close" aria-label="Close popup" onClick={() => { setPinned(null); setHovered(null); }}>×</button>
@@ -175,6 +183,17 @@ export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck,
           </div>}
         </div>;
       })}
+      {layers.checks && size.width > 0 && ram.sandship.supported === true &&
+        <div inert={cannonEditActive} className={`map-anchor${isOpen("checks", bossMarkerId) ? " open" : ""}`}
+          style={bossCoords} {...markerHandlers("checks", bossMarkerId)}>
+          <button type="button" className={`map-pin pin-${bossStatus}`} onClick={() => togglePin("checks", bossMarkerId)}
+            aria-label={`Sandship Boss: ${bossLabel}`} aria-expanded={isOpen("checks", bossMarkerId)} title={`Sandship Boss: ${bossLabel}`} />
+          {isOpen("checks", bossMarkerId) && <div className="map-popover" style={popupStyle(bossCoords.left, bossCoords.top)}>
+            <button type="button" className="popover-close" aria-label="Close popup" onClick={() => { setPinned(null); setHovered(null); }}>×</button>
+            <h3>Sandship Boss</h3><p className="popover-summary">Boss: {bossLabel}</p>
+            <p className="source-note">Read-only boss status: WRAM 0x7ECF28 == 0x0F. Not the Captain randomized prize.</p>
+          </div>}
+        </div>}
       {layers.orbs && size.width > 0 && ORB_SOURCE_DEFINITIONS.map((orb) => {
         const offset = ORB_DISPLAY_OFFSET.get(orb.id) ?? { x: 0, y: -22 };
         const coords = position(orb.id === "uf_orb" ? UPPER_LAND_ORB_POSITION.x : orb.x,

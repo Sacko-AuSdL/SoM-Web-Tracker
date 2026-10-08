@@ -21,8 +21,8 @@ export const HINT_MAP_MARKERS = [...HINT_SOURCE_GROUPS.map((group) => ({
   screenOffset: group.id === "water-palace-hints" ? { x: -26, y: -16 } : { x: 20, y: 14 },
   sources: HINT_SOURCES.filter((source) => source.regionId === group.id),
 })), { id: SANDSHIP.hintId, name: SANDSHIP.hintName, x: SANDSHIP.x, y: SANDSHIP.y,
-  // Below the nearby Kakkara Cannon Office at fit scale, not on top of it.
-  screenOffset: { x: 20, y: 24 }, sources: HINT_SOURCES.filter((source) => source.id === SANDSHIP.hintId) }];
+  // Right of Captain and boss status; clear of the nearby Cannon/Orb pins.
+  screenOffset: { x: 56, y: 0 }, sources: HINT_SOURCES.filter((source) => source.id === SANDSHIP.hintId) }];
 
 export function activeHintMarkers(sandship: SandshipRamState) {
   return HINT_MAP_MARKERS.filter((hint) => hint.id !== SANDSHIP.hintId ||
