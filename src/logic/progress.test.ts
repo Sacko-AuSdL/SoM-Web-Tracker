@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LOCATION_DEFINITIONS } from "../data/locationDefinitions";
+import { activeLocationDefinitions } from "../data/locationDefinitions";
 import { emptyManualState, emptyRamState, setManualCompletion } from "../state/trackerState";
 import { emptyWorldState, setOrbRequirement } from "../state/worldState";
 import { countTrackerProgress } from "./progress";
@@ -10,7 +10,7 @@ describe("global logical-check counters", () => {
     const ram = emptyRamState(), world = emptyWorldState();
     let manual = emptyManualState();
     const count = () => countTrackerProgress(createLogicContext(ram, new Set(), world), manual);
-    expect(count().total).toBe(LOCATION_DEFINITIONS.length);
+    expect(count().total).toBe(activeLocationDefinitions(ram.sandship.supported).length);
     expect(count().completed).toBe(0);
     ram.checks["potos-chest"] = true;
     expect(count().completed).toBe(1);

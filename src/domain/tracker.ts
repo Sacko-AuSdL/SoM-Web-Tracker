@@ -12,10 +12,12 @@ export interface InventoryDefinition {
 export interface LocationEventDefinition {
   eventNumber: number;
   completedValue?: number;
+  requirePersistentFlag?: boolean;
 }
 
 export interface LocationDefinition {
   id: string;
+  feature?: "sandship";
   name: string;
   legacyPath: string;
   completionMode: "any" | "all";

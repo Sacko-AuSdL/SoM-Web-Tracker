@@ -54,7 +54,7 @@ function areaRegion(id: string): RegionId {
   if (["potos", "pandora", "water-palace", "undine-cave", "gaia-s-navel", "elinee-s-castle"].includes(id)) return "potos";
   if (id === "upper-land-matango") return "matango";
   if (id.startsWith("upper-land-")) return "upperLand";
-  if (["kakkara-desert-kakkara", "kakkara-desert-fire-palace"].includes(id)) return "kakkara";
+  if (["kakkara-desert-kakkara", "kakkara-desert-fire-palace", "sandship"].includes(id)) return "kakkara";
   if (id.startsWith("ice-country-")) return "iceCountry";
   if (id.startsWith("vandole-empire-south-town") || id.startsWith("vandole-empire-north-town")) return "empire";
   return "flammieOnly";

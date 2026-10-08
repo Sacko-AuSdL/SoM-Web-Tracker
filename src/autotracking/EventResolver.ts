@@ -14,6 +14,7 @@ export interface EventBinding {
   key: string;
   eventNumber: number;
   completedValue: number;
+  requirePersistentFlag?: boolean;
 }
 
 export interface EventResolutionOutcome {
@@ -37,6 +38,7 @@ export class EventResolver {
         key: `${location.id}:${event.eventNumber.toString(16)}`,
         eventNumber: event.eventNumber,
         completedValue: event.completedValue ?? 1,
+        requirePersistentFlag: event.requirePersistentFlag,
       })),
     );
   }
@@ -83,7 +85,8 @@ export class EventResolver {
         if (
           cached?.eventPointerTable === eventPointerTable &&
           cached.eventPointer === eventPointer &&
-          cached.completedValue === binding.completedValue
+          cached.completedValue === binding.completedValue &&
+          (!binding.requirePersistentFlag || cached.strategy.kind === "flag")
         ) {
           return { binding, resolution: cached, error: null };
         }
@@ -94,6 +97,9 @@ export class EventResolver {
             EVENT_SCAN_SIZE,
           );
           const parsed = parseEventCompletionStrategy(eventData, eventPointer);
+          if (binding.requirePersistentFlag && parsed.kind !== "flag") {
+            throw new Error(`Event 0x${binding.eventNumber.toString(16)} has no recognized persistent prize-claim flag`);
+          }
           const strategy: EventCompletionStrategy =
             parsed.kind === "flag"
               ? { ...parsed, completedValue: binding.completedValue }

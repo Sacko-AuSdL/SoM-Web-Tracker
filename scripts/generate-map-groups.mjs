@@ -1,7 +1,9 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
-import { LOCATION_DEFINITIONS } from "../src/data/locationDefinitions.ts";
+import { activeLocationDefinitions } from "../src/data/locationDefinitions.ts";
+// The frozen PopTracker snapshot predates source-backed optional extensions.
+const LOCATION_DEFINITIONS = activeLocationDefinitions(false);
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const poptrackerRoot = resolve(projectRoot, "source/poptracker");
@@ -126,7 +128,7 @@ function visitHints(nodes, path = []) {
 visitHints(hintTree);
 
 const sourceLines = [
-  'import type { LocationId } from "./locationDefinitions";',
+  'import type { PopTrackerLocationId as LocationId } from "./locationDefinitions";',
   "",
   "// Generated from PopTracker locations/locations.json and locations/hints.json.",
   "// accessTiers preserve each ancestor/section layer; alternatives within a tier are ORed.",

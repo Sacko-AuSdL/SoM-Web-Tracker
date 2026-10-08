@@ -1,12 +1,11 @@
 import { readFileSync } from "node:fs";
 import { expect, it } from "vitest";
 
-it("centers every inner marker symbol, including blocked ×, with one zero-padding grid rule", () => {
+it("uses blank color-only checks and a compact original vector Cannon icon", () => {
   const css = readFileSync("src/styles.css", "utf8");
   expect(css.match(/\.map-pin \{([^}]+)\}/)[1]).toContain("padding: 0; display: grid; place-items: center;");
-  const symbolRule = css.match(/\.map-pin \.map-symbol \{([^}]+)\}/)[1];
-  expect(symbolRule).toContain("place-items: center; width: 100%; height: 100%;");
-  expect(symbolRule).toContain('font: 700 12px/1 "Segoe UI", sans-serif');
+  expect(css).not.toContain(".map-symbol");
+  expect(css).toContain(".cannon-symbol { width: 16px; height: 16px; display: block; }");
 });
 
 it("puts route stroke hit targets above ordinary gameplay markers without making the SVG background interactive", () => {

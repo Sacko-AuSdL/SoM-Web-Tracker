@@ -1,6 +1,6 @@
 import type { AutotrackerSnapshot } from "../autotracking/Autotracker";
 import { INVENTORY_DEFINITIONS } from "../data/inventoryDefinitions";
-import { LOCATION_DEFINITIONS } from "../data/locationDefinitions";
+import { activeLocationDefinitions } from "../data/locationDefinitions";
 import type { EventCompletionStrategy } from "../domain/tracker";
 import { ORB_SOURCE_DEFINITIONS } from "../data/sourceWorldData";
 
@@ -43,16 +43,19 @@ export function DebugPanel({ snapshot, onClose }: DebugPanelProps) {
           <dt>Location error</dt><dd>{snapshot.subsystemErrors.locations ?? "—"}</dd>
           <dt>Inventory error</dt><dd>{snapshot.subsystemErrors.inventory ?? "—"}</dd>
           <dt>Orb subsystem error</dt><dd>{snapshot.subsystemErrors.orbs ?? "—"}</dd>
+          <dt>Sandship extension</dt><dd>{diagnosticValue(snapshot.ram.sandship.supported)}</dd>
+          <dt>Sandship boss (0x7ECF28 == 0x0F)</dt><dd>{diagnosticValue(snapshot.ram.sandship.bossDefeated)} / {hex(snapshot.ram.sandship.bossFlagValue)}</dd>
+          <dt>Sandship error</dt><dd>{snapshot.ram.sandship.error ?? "—"}</dd>
         </dl>
         <h3>Locations</h3>
-        {LOCATION_DEFINITIONS.map((location) => {
+        {activeLocationDefinitions(snapshot.ram.sandship.supported).map((location) => {
           const diagnostic = snapshot.locations[location.id];
           return (
             <details className="debug-entity" key={location.id}>
               <summary>{location.name} <code>{location.id}</code>{diagnostic?.error && <span className="error-marker">Error</span>}</summary>
               <dl className="debug-grid">
                 <dt>Stable ID</dt><dd>{location.id}</dd>
-                <dt>PopTracker path</dt><dd>{location.legacyPath}</dd>
+                <dt>Source / legacy path</dt><dd>{location.legacyPath}</dd>
                 <dt>Completion</dt><dd>{diagnosticValue(snapshot.ram.checks[location.id])}</dd>
                 <dt>Error</dt><dd>{diagnostic?.error ?? "—"}</dd>
                 {(diagnostic?.events ?? []).map((event) => (

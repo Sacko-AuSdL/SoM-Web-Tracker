@@ -75,14 +75,19 @@ describe("map-first interaction", () => {
       world={world} onToggleManualCheck={vi.fn()} onSelectOrb={vi.fn()} />);
     const potos = screen.getByRole("button", { name: /Potos: reachable/ });
     expect(potos.className).toContain("pin-reachable");
+    expect(potos.textContent).toBe("");
     expect(screen.getByRole("button", { name: /Elinee's Castle: unreachable/ }).className).toContain("pin-unreachable");
+    expect(screen.getByRole("button", { name: /Elinee's Castle: unreachable/ }).textContent).toBe("");
     expect(screen.getByRole("button", { name: /Fire Palace: unknown/ }).className).toContain("pin-unknown");
+    expect(screen.getByRole("button", { name: /Fire Palace: unknown/ }).textContent).toBe("");
+    expect(screen.getByRole("button", { name: /Gaia's Navel: partial/ }).className).toContain("pin-partial");
+    expect(screen.getByRole("button", { name: /Gaia's Navel: partial/ }).textContent).toBe("");
     expect(potos.textContent).not.toMatch(/\d+\s*\/\s*\d+/);
     const completed = setManualCompletion(setManualCompletion(emptyManualState(), "potos-chest", true), "mantis-ant", true);
     rerender(<WorldMap ram={ram} manual={completed} manualItems={new Set()}
       world={world} onToggleManualCheck={vi.fn()} onSelectOrb={vi.fn()} />);
     expect(screen.getByRole("button", { name: /Potos: completed/ }).className).toContain("pin-completed");
-    expect(screen.getByRole("button", { name: /Potos: completed/ }).textContent).toBe("✓");
+    expect(screen.getByRole("button", { name: /Potos: completed/ }).textContent).toBe("");
   });
   it("embeds unknown uncertainty inside the Orb sprite rather than a dangling requirement label", () => {
     setupResizeObserver();

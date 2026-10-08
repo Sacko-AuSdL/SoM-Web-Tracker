@@ -1,4 +1,5 @@
 import { ORB_SOURCE_DEFINITIONS } from "../data/sourceWorldData";
+import { SANDSHIP } from "../data/sandship";
 import { CANNON_OFFICE_BY_ID, connectionId, validConnection, type CannonNodeId, type CannonConnection, type CannonTravelMode, type StartingLocation } from "../domain/cannons";
 import { PARTY_MODES, type PartyMode } from "../domain/characters";
 import { ELEMENTS, WEAPON_FAMILIES, requirementAllowed,
@@ -34,6 +35,7 @@ export interface WorldState {
   disabledCharacters: Character[];
   orbs: Record<OrbId, OrbRequirement>;
   manualClearedOrbs: OrbId[];
+  manualReadHints: string[];
   cannonConnections: CannonConnection[];
   closedCannonOffices: CannonNodeId[];
 }
@@ -48,7 +50,7 @@ export function emptyWorldState(): WorldState {
     roles: { boy: "unknown", girl: "unknown", sprite: "unknown" },
     disabledCharacters: [],
     orbs: Object.fromEntries(ORB_SOURCE_DEFINITIONS.map((orb) => [orb.id, { kind: "unknown" }])) as Record<OrbId, OrbRequirement>,
-    manualClearedOrbs: [], cannonConnections: [], closedCannonOffices: [],
+    manualClearedOrbs: [], manualReadHints: [], cannonConnections: [], closedCannonOffices: [],
   };
 }
 
@@ -62,6 +64,12 @@ export function setOrbCleared(state: WorldState, id: OrbId, cleared: boolean): W
   const marks = new Set(state.manualClearedOrbs);
   if (cleared) marks.add(id); else marks.delete(id);
   return { ...state, manualClearedOrbs: [...marks] };
+}
+export function setHintRead(state: WorldState, id: string, read: boolean): WorldState {
+  if (id !== SANDSHIP.hintId) return state;
+  const marks = new Set(state.manualReadHints);
+  if (read) marks.add(id); else marks.delete(id);
+  return { ...state, manualReadHints: [...marks] };
 }
 export function addCannonConnection(state: WorldState, edge: CannonConnection): WorldState {
   if (!validConnection(edge)) return state;
@@ -154,7 +162,8 @@ export function loadWorldState(storage: Storage): WorldState {
     }
     const manualClearedOrbs = Array.isArray(parsed.manualClearedOrbs) ? [...new Set(parsed.manualClearedOrbs.filter(
       (id): id is OrbId => ORB_SOURCE_DEFINITIONS.some((orb) => orb.id === id)))] : [];
-    let state: WorldState = { version: 3, settings, roles, disabledCharacters, orbs, manualClearedOrbs, cannonConnections: [], closedCannonOffices: [] };
+    const manualReadHints = Array.isArray(parsed.manualReadHints) && parsed.manualReadHints.includes(SANDSHIP.hintId) ? [SANDSHIP.hintId] : [];
+    let state: WorldState = { version: 3, settings, roles, disabledCharacters, orbs, manualClearedOrbs, manualReadHints, cannonConnections: [], closedCannonOffices: [] };
     if (Array.isArray(parsed.cannonConnections)) for (const edge of parsed.cannonConnections) if (validConnection(edge)) state = addCannonConnection(state, edge);
     if (Array.isArray(parsed.closedCannonOffices)) state.closedCannonOffices = [...new Set(parsed.closedCannonOffices.filter((id) => CANNON_OFFICE_BY_ID.has(id)))];
     return state;

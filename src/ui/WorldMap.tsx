@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type FocusEvent, type PointerEvent, type WheelEvent } from "react";
 import { MAP_IMAGE_SIZE } from "../data/mapGroups";
-import { MAP_AREAS } from "../data/mapAreas";
+import { activeMapAreas } from "../data/mapAreas";
 import { ORB_DISPLAY_OFFSET, UPPER_LAND_ORB_POSITION } from "../data/orbLayout";
 import { ORB_SOURCE_DEFINITIONS } from "../data/sourceWorldData";
-import { HINT_MAP_MARKERS } from "../data/hintMarkers";
+import { activeHintMarkers } from "../data/hintMarkers";
+import { SANDSHIP } from "../data/sandship";
 import { LOCATION_BY_ID, type LocationId } from "../data/locationDefinitions";
 import type { InventoryId } from "../data/inventoryDefinitions";
 import { ELEMENTS, WEAPON_FAMILIES, requirementLabel, type OrbId, type OrbRequirement } from "../domain/orbs";
@@ -30,9 +31,10 @@ export interface WorldMapProps {
   onToggleManualCheck: (id: LocationId) => void;
   onSelectOrb: (id: OrbId, requirement: OrbRequirement) => void;
   onSetOrbCleared?: (id: OrbId, cleared: boolean) => void;
+  onSetHintRead?: (id: string, read: boolean) => void;
   onCannonAction?: (action: CannonAction) => void;
 }
-export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck, onSelectOrb, onSetOrbCleared, onCannonAction }: WorldMapProps) {
+export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck, onSelectOrb, onSetOrbCleared, onSetHintRead, onCannonAction }: WorldMapProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ pointerId: number; x: number; y: number } | null>(null);
   const initializedRef = useRef(false);
@@ -54,6 +56,7 @@ export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck,
   const open = pinned ?? hovered;
   const officeOpened = useCallback(() => { setPinned(null); setHovered(null); }, []);
   const context = createLogicContext(ram, manualItems, world);
+  const areas = activeMapAreas(ram.sandship.supported);
   useEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport) return;
@@ -139,7 +142,7 @@ export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck,
         viewportSize={size} onOfficeOpen={officeOpened}
         onAction={(action) => onCannonAction?.(action)} />}
       {/* Area, Orb, hint and directed Cannon overlays share one transform. */}
-      {layers.checks && size.width > 0 && MAP_AREAS.map((area) => {
+      {layers.checks && size.width > 0 && areas.map((area) => {
         const progress = evaluateArea(area, context, manual);
         const coords = position(area.x, area.y, area.screenOffset?.x, area.screenOffset?.y);
         return <div key={area.id} inert={cannonEditActive} className={`map-anchor${isOpen("checks", area.id) ? " open" : ""}`}
@@ -147,8 +150,6 @@ export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck,
           <button type="button" className={`map-pin pin-${progress.status}`} onClick={() => togglePin("checks", area.id)}
             aria-label={`${area.name}: ${progress.status}, ${progress.completed} of ${progress.total} complete`}
             aria-expanded={isOpen("checks", area.id)} title={area.name}>
-            <span className="map-symbol" aria-hidden="true">{progress.status === "completed" ? "✓" : progress.status === "unknown" ? "?" :
-              progress.status === "unreachable" ? "×" : progress.status === "partial" ? "◐" : "+"}</span>
           </button>
           {isOpen("checks", area.id) && <div className="map-popover" style={popupStyle(coords.left, coords.top)}>
             <button type="button" className="popover-close" aria-label="Close popup" onClick={() => { setPinned(null); setHovered(null); }}>×</button>
@@ -156,6 +157,8 @@ export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck,
             <div className="popover-summary">{progress.completed}/{progress.total} complete · {progress.reachable} reachable
               {progress.unknown > 0 && ` · ${progress.unknown} unknown`}</div>
             {area.sourceNote && <p className="source-note">{area.sourceNote}</p>}
+            {area.id === SANDSHIP.areaId && <p className="source-note">Boss: {ram.sandship.bossDefeated === null ? "unknown" : ram.sandship.bossDefeated ? "defeated" : "not defeated"}.
+              Fixed boss Weapon Orb and Captain randomized prize are separate.</p>}
             <div className="popover-checks">{area.checkIds.map((id) => {
               const check = LOCATION_BY_ID.get(id)!;
               const state = deriveEffectiveCheckState(id, ram, manual);
@@ -165,8 +168,7 @@ export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck,
                 onClick={() => onToggleManualCheck(id)} aria-pressed={isManuallyCompleted(manual, id)}
                 title={state.completionSource === "ram" ? "Auto-complete; click to add a persistent manual mark" :
                   isManuallyCompleted(manual, id) ? "Click to undo manual completion" : "Click to mark permanently complete"}>
-                <span aria-hidden="true">{state.complete ? "✓" : access.access === "unknown" ? "?" :
-                  access.access === "unreachable" ? "×" : "○"}</span>
+                <span className="check-status-swatch" aria-hidden="true" />
                 <span>{check.name}</span>{state.completionSource === "manual" && <small title="Manually completed">M</small>}
               </button>;
             })}</div>
@@ -209,7 +211,7 @@ export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck,
           </div>}
         </div>;
       })}
-      {layers.hints && size.width > 0 && HINT_MAP_MARKERS.map((hint) => {
+      {layers.hints && size.width > 0 && activeHintMarkers(ram.sandship).map((hint) => {
         // A small display offset keeps the regional fallback off gameplay pins;
         // the source coordinate remains untouched and is not claimed as exact.
         const coords = position(hint.x, hint.y, hint.screenOffset.x, hint.screenOffset.y);
@@ -221,6 +223,12 @@ export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck,
           {isOpen("hints", hint.id) && <div className="map-popover" style={popupStyle(coords.left, coords.top)}>
             <button type="button" className="popover-close" aria-label="Close popup" onClick={() => { setPinned(null); setHovered(null); }}>×</button>
             <h3>{hint.name}</h3><p className="popover-summary">Hint available here</p>
+            {hint.id === SANDSHIP.hintId && <>
+              <button type="button" aria-pressed={world.manualReadHints.includes(hint.id)}
+                onClick={() => onSetHintRead?.(hint.id, !world.manualReadHints.includes(hint.id))}>
+                {world.manualReadHints.includes(hint.id) ? "Mark hint unread" : "Mark hint read"}</button>
+              <p className="source-note">Repeatable hint; manual read mark persists independently of RAM.</p>
+            </>}
             <p className="source-note">Regional position; individual coordinates unavailable.</p>
             {hint.sources.length > 1 && <ul className="hint-sources">{hint.sources.map((source) =>
               <li key={source.id} data-source-id={source.id}>{source.name}</li>)}</ul>}
@@ -228,6 +236,6 @@ export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck,
         </div>;
       })}
     </div>
-    <div className="map-footnote"><div ref={setCannonFooter} /><span>Drag · scroll to zoom · hover or click a marker</span><span>{MAP_AREAS.length} areas · {ORB_SOURCE_DEFINITIONS.length} orbs</span></div>
+    <div className="map-footnote"><div ref={setCannonFooter} /><span>Drag · scroll to zoom · hover or click a marker</span><span>{areas.length} areas · {ORB_SOURCE_DEFINITIONS.length} orbs</span></div>
   </section>;
 }

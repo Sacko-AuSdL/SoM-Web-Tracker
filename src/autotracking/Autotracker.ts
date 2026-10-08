@@ -6,6 +6,7 @@ import { InventoryAutotracker } from "./InventoryAutotracker";
 import { OrbAutotracker, type OrbDiagnostic } from "./OrbAutotracker";
 import type { OrbId } from "../domain/orbs";
 import { LocationAutotracker } from "./LocationAutotracker";
+import { SandshipAutotracker } from "./SandshipAutotracker";
 import { detectSecretOfMana, type GameDetectionResult } from "./potosEvent";
 import { SniClient, type SniStatus } from "./SniClient";
 
@@ -31,6 +32,7 @@ export class Autotracker {
   private readonly locationTracker: LocationAutotracker;
   private readonly inventoryTracker: InventoryAutotracker;
   private readonly orbTracker: OrbAutotracker;
+  private readonly sandshipTracker: SandshipAutotracker;
   private readonly listeners = new Set<Listener>();
   private snapshot: AutotrackerSnapshot;
   private pollTimer: ReturnType<typeof setTimeout> | null = null;
@@ -45,6 +47,7 @@ export class Autotracker {
     this.locationTracker = new LocationAutotracker(this.client, LOCATION_DEFINITIONS);
     this.inventoryTracker = new InventoryAutotracker(this.client, INVENTORY_DEFINITIONS);
     this.orbTracker = new OrbAutotracker(this.client);
+    this.sandshipTracker = new SandshipAutotracker(this.client);
     this.snapshot = {
       sni: this.client.getStatus(), gameDetected: false, game: null,
       ram: emptyRamState(), locations: this.locationTracker.getSnapshot().diagnostics,
@@ -58,7 +61,7 @@ export class Autotracker {
       ...this.snapshot,
       sni: this.client.getStatus(),
       game: this.snapshot.game ? { ...this.snapshot.game, characterFlags: [...this.snapshot.game.characterFlags] as [number, number, number] } : null,
-      ram: { checks: { ...this.snapshot.ram.checks }, inventory: { ...this.snapshot.ram.inventory }, orbs: { ...this.snapshot.ram.orbs } },
+      ram: { checks: { ...this.snapshot.ram.checks }, inventory: { ...this.snapshot.ram.inventory }, orbs: { ...this.snapshot.ram.orbs }, sandship: { ...this.snapshot.ram.sandship } },
       locations: { ...this.snapshot.locations }, inventory: { ...this.snapshot.inventory },
       orbs: { ...this.snapshot.orbs },
       subsystemErrors: { ...this.snapshot.subsystemErrors },
@@ -124,8 +127,10 @@ export class Autotracker {
         return;
       }
 
-      const [locations, inventory, orbs] = await Promise.allSettled([
-        this.locationTracker.poll(), this.inventoryTracker.poll(), this.orbTracker.poll(),
+      const sandshipPromise = this.sandshipTracker.poll();
+      const [locations, inventory, orbs, sandship] = await Promise.allSettled([
+        sandshipPromise.then((feature) => this.locationTracker.poll(feature.supported === true)),
+        this.inventoryTracker.poll(), this.orbTracker.poll(), sandshipPromise,
       ]);
       this.update({
         gameDetected: true, game,
@@ -133,6 +138,7 @@ export class Autotracker {
           checks: locations.status === "fulfilled" ? locations.value.checks as RamState["checks"] : this.snapshot.ram.checks,
           inventory: inventory.status === "fulfilled" ? inventory.value.values as RamState["inventory"] : this.snapshot.ram.inventory,
           orbs: orbs.status === "fulfilled" ? orbs.value.values : emptyRamState().orbs,
+          sandship: sandship.status === "fulfilled" ? sandship.value : { ...emptyRamState().sandship, error: rejectionMessage(sandship) },
         },
         locations: locations.status === "fulfilled" ? locations.value.diagnostics : this.snapshot.locations,
         inventory: inventory.status === "fulfilled" ? inventory.value.diagnostics : this.snapshot.inventory,

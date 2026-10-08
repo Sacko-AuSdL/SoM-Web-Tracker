@@ -1,4 +1,4 @@
-import type { LocationId } from "./locationDefinitions";
+import type { PopTrackerLocationId as LocationId } from "./locationDefinitions";
 
 // Generated from PopTracker locations/locations.json and locations/hints.json.
 // accessTiers preserve each ancestor/section layer; alternatives within a tier are ORed.

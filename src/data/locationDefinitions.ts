@@ -78,9 +78,15 @@ export const LOCATION_DEFINITIONS = [
   { id: "south-town-mara", name: "South Town Mara", legacyPath: "@Vandole Empire/South Town/South Town Mara", completionMode: "any", events: [{ eventNumber: 0x399 }] },
   { id: "undine-biting-lizard", name: "Undine - Biting Lizard", legacyPath: "@Water Palace/Undine - Biting Lizard", completionMode: "any", events: [{ eventNumber: 0x581 }] },
   { id: "water-palace-mana-seed-jabberwocky", name: "Water Palace Mana Seed - Jabberwocky", legacyPath: "@Water Palace/Water Palace Mana Seed - Jabberwocky", completionMode: "any", events: [{ eventNumber: 0x132 }] },
+  { id: "sandship-captain", name: "Sandship - Captain", legacyPath: "@Sandship/Captain", feature: "sandship", completionMode: "any", events: [{ eventNumber: 0x2a3, requirePersistentFlag: true }] },
 ] as const satisfies readonly LocationDefinition[];
 
 export type LocationId = (typeof LOCATION_DEFINITIONS)[number]["id"];
+export type PopTrackerLocationId = Exclude<LocationId, "sandship-captain">;
+
+export function activeLocationDefinitions(supportsSandship: boolean | null = false) {
+  return LOCATION_DEFINITIONS.filter((definition) => !("feature" in definition) || supportsSandship === true);
+}
 
 // Old permanent aggregate marks meant the whole group was complete. Preserve
 // that intent for every independent chest; new chest marks remain independent.

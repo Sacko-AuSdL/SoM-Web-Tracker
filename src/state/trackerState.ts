@@ -2,6 +2,7 @@ import { INVENTORY_DEFINITIONS, type InventoryId } from "../data/inventoryDefini
 import { LEGACY_CHECK_SPLITS, LOCATION_BY_ID, LOCATION_DEFINITIONS, type LocationId } from "../data/locationDefinitions";
 import type { InventoryValue } from "../domain/tracker";
 import { emptyOrbRamState, type OrbRamState } from "../autotracking/OrbAutotracker";
+import { emptySandshipState, type SandshipRamState } from "../data/sandship";
 
 export type CheckRamState = Record<LocationId, boolean | null>;
 export type InventoryRamState = Record<InventoryId, InventoryValue | null>;
@@ -10,6 +11,7 @@ export interface RamState {
   checks: CheckRamState;
   inventory: InventoryRamState;
   orbs: OrbRamState;
+  sandship: SandshipRamState;
 }
 
 export interface PersistentManualState {
@@ -32,6 +34,7 @@ export function emptyRamState(): RamState {
     checks: Object.fromEntries(LOCATION_DEFINITIONS.map((definition) => [definition.id, null])) as CheckRamState,
     inventory: Object.fromEntries(INVENTORY_DEFINITIONS.map((definition) => [definition.id, null])) as InventoryRamState,
     orbs: emptyOrbRamState(),
+    sandship: emptySandshipState(),
   };
 }
 

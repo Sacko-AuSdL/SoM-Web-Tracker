@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LOCATION_DEFINITIONS } from "./locationDefinitions";
+import { LOCATION_DEFINITIONS, activeLocationDefinitions } from "./locationDefinitions";
 import { MAP_AREAS } from "./mapAreas";
 import { HINT_MAP_MARKERS, HINT_SOURCES } from "./hintMarkers";
 import { FIRE_PALACE_ORB_LAYOUT, GRAND_PALACE_ORB_LAYOUT, UPPER_LAND_ORB_POSITION } from "./orbLayout";
@@ -11,7 +11,7 @@ describe("explicit browser map areas", () => {
     expect(assigned).toHaveLength(LOCATION_DEFINITIONS.length);
     expect(new Set(assigned).size).toBe(LOCATION_DEFINITIONS.length);
     expect([...assigned].sort()).toEqual(LOCATION_DEFINITIONS.map((check) => check.id).sort());
-    expect(Object.keys(CHECK_SOURCE_RULES)).toHaveLength(LOCATION_DEFINITIONS.length);
+    expect(Object.keys(CHECK_SOURCE_RULES)).toHaveLength(activeLocationDefinitions(false).length);
   });
   it("separates Water Palace and Undine Cave using the verified PopTracker check", () => {
     expect(MAP_AREAS.find((area) => area.id === "water-palace")?.checkIds).toEqual(["water-palace-mana-seed-jabberwocky"]);
@@ -65,11 +65,12 @@ describe("explicit browser map areas", () => {
     expect(HINT_SOURCE_GROUPS.every((group) => Object.keys(group).sort().join(",") === "id,name,sources,x,y")).toBe(true);
   });
   it("preserves each hint identity at its authoritative regional fallback, without gameplay rules", () => {
-    expect(HINT_SOURCES).toHaveLength(16);
-    expect(new Set(HINT_SOURCES.map((source) => source.id)).size).toBe(16);
-    expect(HINT_SOURCES.map((source) => source.name)).toEqual(HINT_SOURCE_GROUPS.flatMap((group) => [...group.sources]));
-    expect(HINT_MAP_MARKERS).toHaveLength(7);
-    for (const source of HINT_SOURCES) {
+    const sources = HINT_SOURCES.filter((source) => source.regionId !== "sandship");
+    expect(sources).toHaveLength(16);
+    expect(new Set(sources.map((source) => source.id)).size).toBe(16);
+    expect(sources.map((source) => source.name)).toEqual(HINT_SOURCE_GROUPS.flatMap((group) => [...group.sources]));
+    expect(HINT_MAP_MARKERS.filter((marker) => marker.id !== "sandship-morie-hint")).toHaveLength(7);
+    for (const source of sources) {
       const region = HINT_SOURCE_GROUPS.find((group) => group.id === source.regionId)!;
       expect([source.x, source.y]).toEqual([region.x, region.y]);
       expect(source.coordinatePrecision).toBe("regional");

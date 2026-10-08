@@ -13,6 +13,8 @@ import {
 import { LocationAutotracker } from "./LocationAutotracker";
 import type { LocationDefinition } from "../domain/tracker";
 import { LOCATION_DEFINITIONS } from "../data/locationDefinitions";
+import { SandshipAutotracker, SANDSHIP_EVENT_SIGNATURES } from "./SandshipAutotracker";
+import { SANDSHIP } from "../data/sandship";
 
 type Listener = (event: { data?: string | ArrayBuffer }) => void;
 
@@ -155,6 +157,93 @@ function waitForTrackerSnapshot(
 }
 
 describe("SniClient usb2snes flow", () => {
+  function installSandship(claimFlag = 0xca) {
+    for (const [index, signature] of SANDSHIP_EVENT_SIGNATURES.entries()) {
+      const pointer = 0xe16000 + index * 0x100;
+      mockMemory.set(0x216b53 + signature.event * 3, new Uint8Array([pointer & 0xff, pointer >> 8 & 0xff, pointer >> 16]));
+      const bytes: number[] = [...signature.bytes];
+      if (signature.event === SANDSHIP.captainEvent) {
+        bytes.push(0x42, claimFlag, 0x1f, 0x13, 0x96);
+        // OpenWorldPrizes.cs: weapon acquisition increments both stage/ownership;
+        // the first (C2) is NOT the persistent acquired flag (CA).
+        if (claimFlag === 0xca) bytes.push(0x2b, 0x92, 0x29, 0xc2, 0x29, claimFlag, 0x08, 0x08, 0x2f, 0x44, 0x00);
+        else bytes.push(0x30, claimFlag, 0x01, 0x00);
+      }
+      mockMemory.set(pointer - 0xc00000, new Uint8Array(bytes));
+    }
+    mockMemory.set(0xf5cf28, new Uint8Array([14]));
+    mockMemory.set(0xf5cf00 + claimFlag, new Uint8Array([0]));
+  }
+
+  it.each([0xca, 0x77])("resolves Captain dynamically to flag 0x%s, independently of boss clear, with rollback", async (claimFlag) => {
+    vi.stubGlobal("WebSocket", MockWebSocket); installSandship(claimFlag);
+    const client = new SniClient("ws://mock-sni:23074"); client.start();
+    try {
+      await waitForAttached(client);
+      const boss = new SandshipAutotracker(client);
+      const checks = new LocationAutotracker(client, LOCATION_DEFINITIONS.filter((check) => check.id === SANDSHIP.captainId || check.id === "potos-chest"));
+      expect(await boss.poll()).toMatchObject({ supported: true, bossDefeated: false, bossFlagValue: 14, error: null });
+      expect((await checks.poll(true)).checks[SANDSHIP.captainId]).toBe(false);
+      mockMemory.set(0xf5cf28, new Uint8Array([15]));
+      expect((await boss.poll()).bossDefeated).toBe(true);
+      expect((await checks.poll(true)).checks[SANDSHIP.captainId]).toBe(false);
+      mockMemory.set(0xf5cf00 + claimFlag, new Uint8Array([1]));
+      const claimed = await checks.poll(true);
+      expect(claimed.checks[SANDSHIP.captainId]).toBe(true);
+      expect(claimed.diagnostics[SANDSHIP.captainId].events[0].strategy).toMatchObject({ kind: "flag", flagAddress: 0x7ecf00 + claimFlag });
+      mockMemory.set(0xf5cf28, new Uint8Array([14])); mockMemory.set(0xf5cf00 + claimFlag, new Uint8Array([0]));
+      expect((await boss.poll()).bossDefeated).toBe(false);
+      expect((await checks.poll(true)).checks[SANDSHIP.captainId]).toBe(false);
+      const unsupported = await checks.poll(false);
+      expect(unsupported.checks[SANDSHIP.captainId]).toBeNull();
+      expect(unsupported.checks["potos-chest"]).toBe(true);
+    } finally { client.stop(); }
+  });
+
+  it("requires every patched signature, rejects invalid boss values and does not infer support from event IDs", async () => {
+    vi.stubGlobal("WebSocket", MockWebSocket);
+    const client = new SniClient("ws://mock-sni:23074"); client.start();
+    try {
+      await waitForAttached(client); const tracker = new SandshipAutotracker(client);
+      expect(await tracker.poll()).toMatchObject({ supported: false, bossDefeated: null, error: null });
+      installSandship();
+      mockMemory.set(0xf5cf28, new Uint8Array([16]));
+      expect(await tracker.poll()).toMatchObject({ supported: true, bossDefeated: null, bossFlagValue: null, error: "Invalid Sandship boss flag value: 16" });
+      for (const [index] of SANDSHIP_EVENT_SIGNATURES.entries()) {
+        installSandship(); mockMemory.set(0x216000 + index * 0x100, new Uint8Array([0]));
+        expect((await tracker.poll()).supported).toBe(false);
+      }
+    } finally { client.stop(); }
+  });
+
+  it("isolates Sandship compatibility/claim failures while game, Potos, Mantis and inventory keep polling", async () => {
+    vi.stubGlobal("WebSocket", MockWebSocket); installSandship();
+    mockMemory.set(0xf5cf28, new Uint8Array([15]));
+    mockMemory.set(0x216200, new Uint8Array([...SANDSHIP_EVENT_SIGNATURES[2].bytes, 0x00]));
+    mockMemory.set(0xf500d1, new Uint8Array([0x00, 0x62, 0xe1]));
+    let failCompatibility = false;
+    const originalRead = SniClient.prototype.readMemory;
+    vi.spyOn(SniClient.prototype, "readMemory").mockImplementation(function (this: SniClient, address, size) {
+      if (failCompatibility && address === 0x216b53 + SANDSHIP.entranceEvent * 3 && size === 3) return Promise.reject(new Error("Mock Sandship compatibility failure"));
+      return originalRead.call(this, address, size);
+    });
+    const tracker = new PotosAutotracker("ws://mock-sni:23074"); tracker.start();
+    try {
+      const failedClaim = await waitForTrackerSnapshot(tracker, (s) => s.gameDetected && s.ram.sandship.bossDefeated === true);
+      expect(failedClaim.ram.checks["potos-chest"]).toBe(true);
+      expect(failedClaim.ram.checks["mantis-ant"]).toBe(true);
+      expect(failedClaim.ram.inventory["weapon-spear"]).toBe(true);
+      expect(failedClaim.ram.checks[SANDSHIP.captainId]).toBeNull();
+      expect(failedClaim.locations[SANDSHIP.captainId].error).toContain("persistent prize-claim flag");
+      failCompatibility = true; mockMemory.set(0xf5cf29, new Uint8Array([0]));
+      const later = await waitForTrackerSnapshot(tracker, (s) => s.ram.sandship.error === "Mock Sandship compatibility failure");
+      expect(later.gameDetected).toBe(true);
+      expect(later.game?.currentMap).toBe(1);
+      expect(later.ram.checks["potos-chest"]).toBe(false);
+      expect(later.ram.inventory["weapon-spear"]).toBe(true);
+      expect(later.ram.sandship.supported).toBeNull();
+    } finally { tracker.stop(); }
+  });
   it("autotracks independent Pandora chest events and rolls one back without completing its sibling", async () => {
     vi.stubGlobal("WebSocket", MockWebSocket);
     const definitions = LOCATION_DEFINITIONS.filter((check) => check.legacyPath === "@Pandora/Pandora Castle Chests");

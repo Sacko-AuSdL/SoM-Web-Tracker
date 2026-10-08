@@ -15,7 +15,7 @@ import { DungeonMapPanel } from "./ui/DungeonMapPanel";
 import { ItemPanel } from "./ui/ItemPanel";
 import { SettingsPanel } from "./ui/SettingsPanel";
 import { WorldMap } from "./ui/WorldMap";
-import { emptyWorldState, loadWorldState, saveWorldState, setOrbMode, setOrbRequirement, setRoleIdentity, setOrbCleared,
+import { emptyWorldState, loadWorldState, saveWorldState, setOrbMode, setOrbRequirement, setRoleIdentity, setOrbCleared, setHintRead,
   addCannonConnection, removeCannonConnection, replaceCannonConnection, clearCannonConnections, setCannonOfficeClosed,
   type Character, type Role, type WorldSettings, type WorldState } from "./state/worldState";
 import { loadUiPreferences, saveUiPreferences, type DungeonMode, type InventoryMode } from "./state/uiPreferences";
@@ -118,6 +118,7 @@ export default function App() {
           <WorldMap ram={snapshot.ram} manual={manual} manualItems={manualItems} world={world}
             onToggleManualCheck={toggleManualCheck} onSelectOrb={selectOrb}
             onSetOrbCleared={(id, cleared) => setWorld((current) => setOrbCleared(current, id, cleared))}
+            onSetHintRead={(id, read) => setWorld((current) => setHintRead(current, id, read))}
             onCannonAction={cannonAction} />
           {dungeon && <DungeonMapPanel dungeon={dungeon} />}
         </div>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LOCATION_DEFINITIONS } from "../data/locationDefinitions";
+import { LOCATION_DEFINITIONS, activeLocationDefinitions } from "../data/locationDefinitions";
 import { CHECK_REGION, type CannonTravelMode } from "../domain/cannons";
 import { emptyManualState, emptyRamState } from "../state/trackerState";
 import { addCannonConnection, emptyWorldState, removeCannonConnection, setOrbCleared, setOrbMode, setOrbRequirement } from "../state/worldState";
@@ -83,7 +83,7 @@ describe("starting frontier and directed region travel", () => {
     const before = count();
     world = addCannonConnection(world, { from: "kakkara", to: "potos" });
     expect(count().available).toBeGreaterThan(before.available);
-    expect(count()).toMatchObject({ total: LOCATION_DEFINITIONS.length, completed: 0 });
+    expect(count()).toMatchObject({ total: activeLocationDefinitions(false).length, completed: 0 });
     world = removeCannonConnection(world, "kakkara:potos");
     expect(count()).toEqual(before);
     world.settings.cannonMode = "vanilla";

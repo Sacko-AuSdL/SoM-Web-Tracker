@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import raw from "../../source/poptracker/locations.lua?raw";
-import { LEGACY_CHECK_SPLITS, LOCATION_BY_ID, LOCATION_DEFINITIONS, LOCATION_EVENT_BINDING_COUNT } from "./locationDefinitions";
+import { LEGACY_CHECK_SPLITS, LOCATION_BY_ID, activeLocationDefinitions } from "./locationDefinitions";
+const LOCATION_DEFINITIONS = activeLocationDefinitions(false);
 import { MAP_AREAS } from "./mapAreas";
 import { CHECK_SOURCE_RULES } from "./sourceWorldData";
 import { emptyManualState, emptyRamState, setManualCompletion } from "../state/trackerState";
@@ -43,7 +44,7 @@ describe("authoritative independent chest audit", () => {
   });
   it("counts 76 independent checks without adding or duplicating any event binding", () => {
     expect(LOCATION_DEFINITIONS).toHaveLength(76);
-    expect(LOCATION_EVENT_BINDING_COUNT).toBe(76);
+    expect(LOCATION_DEFINITIONS.reduce((sum, check) => sum + check.events.length, 0)).toBe(76);
     expect(new Set(LOCATION_DEFINITIONS.flatMap((check) => check.events.map((event) => event.eventNumber))).size).toBe(76);
     expect(new Set(sourceEvents.map((entry) => entry.event))).toEqual(new Set(LOCATION_DEFINITIONS.flatMap((check) => check.events.map((event) => event.eventNumber))));
   });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { LOCATION_DEFINITIONS } from "./locationDefinitions";
+import { activeLocationDefinitions } from "./locationDefinitions";
+const LOCATION_DEFINITIONS = activeLocationDefinitions(false);
 import { MAP_GROUPS, MAP_IMAGE_SIZE } from "./mapGroups";
 import raw from "../../source/poptracker/locations/locations.json?raw";
 

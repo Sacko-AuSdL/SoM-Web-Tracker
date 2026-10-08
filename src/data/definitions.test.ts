@@ -10,6 +10,7 @@ import {
   LOCATION_BY_ID,
   LOCATION_DEFINITIONS,
   LOCATION_EVENT_BINDING_COUNT,
+  activeLocationDefinitions,
 } from "./locationDefinitions";
 
 describe("PopTracker data migration", () => {
@@ -32,8 +33,8 @@ describe("PopTracker data migration", () => {
   });
 
   it("ports all 76 independent standard checks and preserves 76 event bindings", () => {
-    expect(LOCATION_DEFINITIONS).toHaveLength(76);
-    expect(LOCATION_EVENT_BINDING_COUNT).toBe(76);
+    expect(activeLocationDefinitions(false)).toHaveLength(76);
+    expect(LOCATION_EVENT_BINDING_COUNT).toBe(77);
   });
 
   it("represents PopTracker's independent Pandora events and target-value special cases as data", () => {

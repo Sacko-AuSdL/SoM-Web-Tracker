@@ -49,9 +49,17 @@ export class LocationAutotracker {
     }
   }
 
-  async poll(): Promise<LocationPollResult> {
+  async poll(supportsSandship = false): Promise<LocationPollResult> {
+    const active = [...this.owners.values()].filter((owner) => !owner.location.feature || supportsSandship);
+    for (const [key, owner] of this.owners) {
+      if (owner.location.feature && !supportsSandship) {
+        this.resolutions.delete(key);
+        this.eventDiagnostics.delete(key);
+        this.executionCompleted.delete(key);
+      }
+    }
     const outcomes = await this.resolver.resolve(
-      [...this.owners.values()].map((owner) => owner.binding),
+      active.map((owner) => owner.binding),
     );
     const flagOutcomes = outcomes.filter(
       (outcome) => outcome.resolution?.strategy.kind === "flag",

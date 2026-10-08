@@ -91,8 +91,12 @@
   font-family: Manaspace, monospace; }
 .map-pin:hover, .map-pin:focus-visible { transform: scale(1.2); outline: 2px solid #fff4b8;
   box-shadow: 0 0 0 4px #071724d9, 0 0 10px #fff2ad; }
-.map-pin .map-symbol { display: grid; place-items: center; width: 100%; height: 100%;
-  font: 700 12px/1 "Segoe UI", sans-serif; white-space: nowrap; }
+.cannon-symbol { width: 16px; height: 16px; display: block; }
+.check-status-swatch { width: 10px; height: 10px; background: currentColor; border: 1px solid currentColor; flex-shrink: 0; }
+.popover-check.reachable .check-status-swatch { background: #159447; }
+.popover-check.unreachable .check-status-swatch { background: #861f2d; }
+.popover-check.complete .check-status-swatch { background: #697079; }
+.popover-check.unknown .check-status-swatch, .popover-check.checkable .check-status-swatch { background: #d18a16; }
 .cannon-pin.target { outline: 2px solid #a9f4b7; box-shadow: 0 0 8px #83e5ab; }
 .cannon-cancel { position: absolute; top: 8px; left: 8px; z-index: 11; padding: 5px 8px;
   border: 1px solid #e1bc77; border-radius: 4px; background: #172b3b; color: #ffe4aa; font-size: 11px; }
