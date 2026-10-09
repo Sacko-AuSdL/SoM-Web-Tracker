@@ -198,6 +198,9 @@
   border-radius: 50%; background: #182d35d9; color: #dacdaf; box-shadow: 0 1px 3px #000; }
 .hint-scroll { width: 13px; height: 11px; border: 1px solid #b7aa8e; border-radius: 4px 1px;
   background: #534c3b; font: 10px/8px "Segoe UI", sans-serif; }
+.hint-pin.hint-blocked .hint-scroll { background: #861f2d; border-color: #ffa6a1; border-style: dashed; }
+.hint-pin.hint-unknown .hint-scroll { background: #634715; border-color: #fff1a7; border-style: dotted; }
+.hint-pin.hint-available .hint-scroll { background: #266249; border-color: #b8f4d1; }
 .map-popover { position: absolute; left: 100%; top: -8px; width: 268px; max-height: min(420px, 70vh); overflow: auto;
   padding: 12px; border: 1px solid #c5ad77; border-radius: 6px; background: #152a3bf5;
   box-shadow: 0 9px 28px #03101bef; color: #eff6f8; cursor: default; }

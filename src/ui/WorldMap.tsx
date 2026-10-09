@@ -116,11 +116,6 @@ export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck,
   };
   const position = (x: number, y: number, dx = 0, dy = 0) => worldToScreen(view, x, y, dx, dy);
   const isOpen = (kind: Layer, id: string) => open?.kind === kind && open.id === id;
-  // Display-only boss status: no LocationId, manual mark, or counted prize.
-  const bossMarkerId = "sandship-boss";
-  const bossCoords = position(SANDSHIP.x, SANDSHIP.y, 48, -24);
-  const bossStatus = ram.sandship.bossDefeated === null ? "unknown" : ram.sandship.bossDefeated ? "completed" : "unreachable";
-  const bossLabel = ram.sandship.bossDefeated === null ? "unknown" : ram.sandship.bossDefeated ? "defeated" : "not defeated";
   return <section className="map-panel" aria-label="World map">
     <div className="panel-heading map-heading">
       <div><span className="eyebrow">OVERWORLD</span><h2>World map</h2></div>
@@ -183,17 +178,6 @@ export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck,
           </div>}
         </div>;
       })}
-      {layers.checks && size.width > 0 && ram.sandship.supported === true &&
-        <div inert={cannonEditActive} className={`map-anchor${isOpen("checks", bossMarkerId) ? " open" : ""}`}
-          style={bossCoords} {...markerHandlers("checks", bossMarkerId)}>
-          <button type="button" className={`map-pin pin-${bossStatus}`} onClick={() => togglePin("checks", bossMarkerId)}
-            aria-label={`Sandship Boss: ${bossLabel}`} aria-expanded={isOpen("checks", bossMarkerId)} title={`Sandship Boss: ${bossLabel}`} />
-          {isOpen("checks", bossMarkerId) && <div className="map-popover" style={popupStyle(bossCoords.left, bossCoords.top)}>
-            <button type="button" className="popover-close" aria-label="Close popup" onClick={() => { setPinned(null); setHovered(null); }}>×</button>
-            <h3>Sandship Boss</h3><p className="popover-summary">Boss: {bossLabel}</p>
-            <p className="source-note">Read-only boss status: WRAM 0x7ECF28 == 0x0F. Not the Captain randomized prize.</p>
-          </div>}
-        </div>}
       {layers.orbs && size.width > 0 && ORB_SOURCE_DEFINITIONS.map((orb) => {
         const offset = ORB_DISPLAY_OFFSET.get(orb.id) ?? { x: 0, y: -22 };
         const coords = position(orb.id === "uf_orb" ? UPPER_LAND_ORB_POSITION.x : orb.x,
@@ -234,16 +218,23 @@ export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck,
         // A small display offset keeps the regional fallback off gameplay pins;
         // the source coordinate remains untouched and is not claimed as exact.
         const coords = position(hint.x, hint.y, hint.screenOffset.x, hint.screenOffset.y);
+        // Visibility follows compatibility, while availability follows the existing boss RAM gate.
+        const isMorie = hint.id === SANDSHIP.hintId;
+        const availability = !isMorie || ram.sandship.bossDefeated === true ? "available" :
+          ram.sandship.bossDefeated === false ? "blocked" : "unknown";
+        const availabilityLabel = availability === "available" ? "Hint available here" : availability === "blocked" ?
+          "Hint unavailable: defeat the Sandship boss first" : "Hint availability unknown: boss state unavailable";
         return <div key={hint.id} inert={cannonEditActive} className={`map-anchor hint-anchor${isOpen("hints", hint.id) ? " open" : ""}`}
           style={coords} {...markerHandlers("hints", hint.id)}>
-          <button type="button" className="hint-pin" onClick={() => togglePin("hints", hint.id)}
-            aria-label={`${hint.name}: ${hint.sources.length} hint sources (regional position)`}
+          <button type="button" className={`hint-pin${isMorie ? ` hint-${availability}` : ""}`} onClick={() => togglePin("hints", hint.id)}
+            aria-label={`${hint.name}: ${hint.sources.length} hint sources (regional position)${isMorie ? `, ${availability}` : ""}`}
             aria-expanded={isOpen("hints", hint.id)}><span className="hint-scroll" aria-hidden="true">≡</span></button>
           {isOpen("hints", hint.id) && <div className="map-popover" style={popupStyle(coords.left, coords.top)}>
             <button type="button" className="popover-close" aria-label="Close popup" onClick={() => { setPinned(null); setHovered(null); }}>×</button>
-            <h3>{hint.name}</h3><p className="popover-summary">Hint available here</p>
-            {hint.id === SANDSHIP.hintId && <>
+            <h3>{hint.name}</h3><p className="popover-summary">{availabilityLabel}</p>
+            {isMorie && <>
               <button type="button" aria-pressed={world.manualReadHints.includes(hint.id)}
+                disabled={availability !== "available" && !world.manualReadHints.includes(hint.id)}
                 onClick={() => onSetHintRead?.(hint.id, !world.manualReadHints.includes(hint.id))}>
                 {world.manualReadHints.includes(hint.id) ? "Mark hint unread" : "Mark hint read"}</button>
               <p className="source-note">Repeatable hint; manual read mark persists independently of RAM.</p>

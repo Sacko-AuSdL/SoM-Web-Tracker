@@ -22,7 +22,7 @@ function setup() {
   return { ram, world, manual: emptyManualState(), manualItems: new Set<never>(),
     onToggleManualCheck: vi.fn(), onSelectOrb: vi.fn(), onSetHintRead: vi.fn() };
 }
-it("hides unsupported Sandship, exposes its pre-boss popup, and gives Morie separate read controls after victory", () => {
+it("shows Morie blocked before victory, enables manual read afterwards, and preserves its mark through rollback", () => {
   const ram = emptyRamState(); let world = emptyWorldState(); world.settings.startingLocation = "kakkara";
   world.settings.drumLogic = "random";
   const onSetHintRead = vi.fn();
@@ -39,7 +39,7 @@ it("hides unsupported Sandship, exposes its pre-boss popup, and gives Morie sepa
   expect(captain.className).toContain("unreachable");
   expect(captain.getAttribute("aria-pressed")).toBe("false");
   expect(screen.getByText(/Boss: not defeated/)).toBeDefined();
-  expect(screen.queryByRole("button", { name: /Sandship - Morie Hint:/ })).toBeNull();
+  expect(screen.getByRole("button", { name: /Sandship - Morie Hint:.*blocked/ }).classList.contains("hint-blocked")).toBe(true);
   ram.sandship.bossDefeated = true;
   rerender(<WorldMap {...props()} />);
   expect(screen.getByRole("button", { name: "Sandship - Captain" }).classList.contains("reachable")).toBe(true);
@@ -49,25 +49,43 @@ it("hides unsupported Sandship, exposes its pre-boss popup, and gives Morie sepa
   world = setHintRead(world, SANDSHIP.hintId, true);
   rerender(<WorldMap {...props()} />);
   expect(screen.getByRole("button", { name: "Mark hint unread" }).getAttribute("aria-pressed")).toBe("true");
+  expect(countTrackerProgress(createLogicContext(ram, new Set(), world), emptyManualState())).toMatchObject({ total: 77, completed: 0 });
   ram.sandship.bossDefeated = false;
   rerender(<WorldMap {...props()} />);
-  expect(screen.queryByRole("button", { name: /Sandship - Morie Hint:/ })).toBeNull();
+  expect(screen.getByRole("button", { name: /Sandship - Morie Hint:.*blocked/ }).classList.contains("hint-blocked")).toBe(true);
+  expect(screen.getByText("Hint unavailable: defeat the Sandship boss first")).toBeDefined();
+  const unread = screen.getByRole("button", { name: "Mark hint unread" }) as HTMLButtonElement;
+  expect(unread.disabled).toBe(false);
+  fireEvent.click(unread);
+  expect(onSetHintRead).toHaveBeenLastCalledWith(SANDSHIP.hintId, false);
   expect(world.manualReadHints).toEqual([SANDSHIP.hintId]);
   expect([...document.querySelectorAll(".map-pin")].every((pin) => pin.textContent === "" && pin.children.length === 0)).toBe(true);
 });
 
-it.each([null, false, true] as const)("renders supported boss state %s without completing Captain or adding a prize", (bossDefeated) => {
+it.each([null, false, true] as const)("uses boss state %s to gate visible Captain/Morie without rendering a boss check or adding a prize", (bossDefeated) => {
   const props = setup(); props.ram.sandship.supported = true;
   props.ram.sandship.bossDefeated = bossDefeated; props.ram.checks[SANDSHIP.captainId] = false;
   render(<WorldMap {...props} />);
-  const label = bossDefeated === null ? "unknown" : bossDefeated ? "defeated" : "not defeated";
-  const boss = screen.getByRole("button", { name: `Sandship Boss: ${label}` });
-  expect(boss.classList.contains(`pin-${bossDefeated === null ? "unknown" : bossDefeated ? "completed" : "unreachable"}`)).toBe(true);
+  expect(screen.queryByRole("button", { name: /^Sandship Boss:/ })).toBeNull();
   const captain = screen.getByRole("button", { name: /^Sandship - Captain:/ });
+  expect(captain.classList.contains(`pin-${bossDefeated === null ? "unknown" : bossDefeated ? "reachable" : "unreachable"}`)).toBe(true);
   expect(captain.classList.contains("pin-completed")).toBe(false);
+  expect(document.querySelectorAll('.map-pin[title^="Sandship"]')).toHaveLength(1);
   expect(countTrackerProgress(createLogicContext(props.ram, props.manualItems, props.world), props.manual)).toMatchObject({ total: 77, completed: 0 });
-  fireEvent.click(boss);
-  expect(screen.getByText(/Read-only boss status: WRAM 0x7ECF28 == 0x0F/)).toBeDefined();
+  fireEvent.click(screen.getByRole("button", { name: "Hints ○" }));
+  const availability = bossDefeated === null ? "unknown" : bossDefeated ? "available" : "blocked";
+  const morie = screen.getByRole("button", { name: new RegExp(`^Sandship - Morie Hint:.*${availability}$`) });
+  expect(morie.classList.contains(`hint-${availability}`)).toBe(true);
+  fireEvent.click(morie);
+  const read = screen.getByRole("button", { name: "Mark hint read" }) as HTMLButtonElement;
+  expect(read.disabled).toBe(bossDefeated !== true);
+  if (bossDefeated === true) expect(screen.getByText("Hint available here")).toBeDefined();
+  else {
+    expect(screen.queryByText("Hint available here")).toBeNull();
+    expect(screen.getByText(bossDefeated === false ? "Hint unavailable: defeat the Sandship boss first" : "Hint availability unknown: boss state unavailable")).toBeDefined();
+    fireEvent.click(read);
+    expect(props.onSetHintRead).not.toHaveBeenCalled();
+  }
   expect(props.onToggleManualCheck).not.toHaveBeenCalled();
 });
 
@@ -76,21 +94,23 @@ it("keeps boss RAM rollback independent from Captain RAM and persistent manual c
   props.ram.checks[SANDSHIP.captainId] = true;
   const { rerender } = render(<WorldMap {...props} />);
   expect(screen.getByRole("button", { name: /^Sandship - Captain: completed/ })).toBeDefined();
-  expect(screen.getByRole("button", { name: "Sandship Boss: not defeated" })).toBeDefined();
+  fireEvent.click(screen.getByRole("button", { name: "Hints ○" }));
+  expect(screen.getByRole("button", { name: /^Sandship - Morie Hint:.*blocked/ })).toBeDefined();
   props.ram.checks[SANDSHIP.captainId] = false;
   props.manual = setManualCompletion(props.manual, SANDSHIP.captainId, true);
   props.ram.sandship.bossDefeated = true;
   rerender(<WorldMap {...props} />);
-  expect(screen.getByRole("button", { name: "Sandship Boss: defeated" })).toBeDefined();
+  expect(screen.getByRole("button", { name: /^Sandship - Morie Hint:.*available/ })).toBeDefined();
   props.ram.sandship.bossDefeated = false;
   rerender(<WorldMap {...props} />);
-  expect(screen.getByRole("button", { name: "Sandship Boss: not defeated" }).classList.contains("pin-completed")).toBe(false);
+  expect(screen.getByRole("button", { name: /^Sandship - Morie Hint:.*blocked/ })).toBeDefined();
+  expect(screen.queryByRole("button", { name: /^Sandship Boss:/ })).toBeNull();
   expect(screen.getByRole("button", { name: /^Sandship - Captain: completed/ })).toBeDefined();
   expect(countTrackerProgress(createLogicContext(props.ram, props.manualItems, props.world), props.manual)).toMatchObject({ total: 77, completed: 1 });
 });
 
-it("gates Morie on the Hints layer and hides all three markers for unsupported or undetected builds", () => {
-  const props = setup(); props.ram.sandship.supported = true; props.ram.sandship.bossDefeated = true;
+it("gates Morie visibility only on the Hints layer and compatibility, and hides unsupported or undetected Sandship", () => {
+  const props = setup(); props.ram.sandship.supported = true; props.ram.sandship.bossDefeated = false;
   const { rerender } = render(<WorldMap {...props} />);
   expect(screen.queryByRole("button", { name: /^Sandship - Morie Hint:/ })).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Hints ○" }));
@@ -115,8 +135,8 @@ it("gates Morie on the Hints layer and hides all three markers for unsupported o
   }
 });
 
-it("separates the three Sandship display markers through fixed small screen offsets at fit and zoom", () => {
-  const props = setup(); props.ram.sandship.supported = true; props.ram.sandship.bossDefeated = true;
+it("separates only Captain and Morie through small display offsets at fit and zoom", () => {
+  const props = setup(); props.ram.sandship.supported = true; props.ram.sandship.bossDefeated = false;
   render(<WorldMap {...props} />);
   fireEvent.click(screen.getByRole("button", { name: "Hints ○" }));
   const coordinates = (name: RegExp) => {
@@ -125,10 +145,9 @@ it("separates the three Sandship display markers through fixed small screen offs
   };
   for (const zoom of [false, true]) {
     if (zoom) fireEvent.click(screen.getByRole("button", { name: "Zoom in" }));
-    const captain = coordinates(/^Sandship - Captain:/), boss = coordinates(/^Sandship Boss:/), hint = coordinates(/^Sandship - Morie Hint:/);
-    expect(boss.x - captain.x).toBeCloseTo(48); expect(boss.y - captain.y).toBeCloseTo(-24);
+    const captain = coordinates(/^Sandship - Captain:/), hint = coordinates(/^Sandship - Morie Hint:/);
     expect(hint.x - captain.x).toBeCloseTo(56); expect(hint.y - captain.y).toBeCloseTo(0);
-    for (const [a, b] of [[captain, boss], [captain, hint], [boss, hint]])
-      expect(Math.abs(a.x - b.x) >= 22 || Math.abs(a.y - b.y) >= 22).toBe(true);
+    expect(Math.abs(hint.x - captain.x)).toBeGreaterThanOrEqual(22);
+    expect(screen.queryByRole("button", { name: /^Sandship Boss:/ })).toBeNull();
   }
 });

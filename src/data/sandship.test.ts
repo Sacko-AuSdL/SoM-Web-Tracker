@@ -33,7 +33,7 @@ describe("source-backed Sandship extension", () => {
     expect(evaluateCheck(SANDSHIP.captainId, context, manual).visible).toBe(supported === true);
   });
 
-  it("reuses Kakkara-start travel without extra items, then gates Captain and Morie on boss clear", () => {
+  it("reuses Kakkara-start travel and gates Captain on boss clear without hiding Morie", () => {
     const ram = emptyRamState(), world = emptyWorldState(), manual = emptyManualState();
     ram.sandship.supported = true; ram.sandship.bossDefeated = false;
     world.settings.cannonMode = "shuffle";
@@ -44,7 +44,7 @@ describe("source-backed Sandship extension", () => {
     world.settings.startingLocation = "kakkara";
     expect(evaluateArea(area, context(), manual).status).toBe("reachable");
     expect(evaluateCheck(SANDSHIP.captainId, context(), manual)).toMatchObject({ access: "unreachable", complete: false });
-    expect(activeHintMarkers(ram.sandship).some((hint) => hint.id === SANDSHIP.hintId)).toBe(false);
+    expect(activeHintMarkers(ram.sandship).some((hint) => hint.id === SANDSHIP.hintId)).toBe(true);
     const before = countTrackerProgress(context(), manual).available;
     ram.sandship.bossDefeated = true;
     expect(evaluateCheck(SANDSHIP.captainId, context(), manual)).toMatchObject({ access: "reachable", complete: false });
@@ -71,7 +71,7 @@ describe("source-backed Sandship extension", () => {
     saveWorldState(storage, setHintRead(loadWorldState(storage), SANDSHIP.hintId, true));
     expect(loadWorldState(storage).manualReadHints).toEqual([SANDSHIP.hintId]);
     const ram = emptyRamState(); ram.sandship.supported = true; ram.sandship.bossDefeated = false;
-    expect(activeHintMarkers(ram.sandship).some((hint) => hint.id === SANDSHIP.hintId)).toBe(false);
+    expect(activeHintMarkers(ram.sandship).some((hint) => hint.id === SANDSHIP.hintId)).toBe(true);
     expect(loadWorldState(storage).manualReadHints).toEqual([SANDSHIP.hintId]);
     expect(setHintRead(loadWorldState(storage), SANDSHIP.hintId, false).manualReadHints).toEqual([]);
     const marks = setManualCompletion(setManualCompletion(emptyManualState(), "potos-chest", true), SANDSHIP.captainId, true);
