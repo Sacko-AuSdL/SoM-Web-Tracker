@@ -63,8 +63,13 @@ the tracker's original-code MIT license.
 
 Sandship is at world-image pixel (660,1690), south of Kakkara (660,1484).
 Its arena uses the existing Kakkara travel access, excluding the unrelated
-Sea Hare Tail trade gate; no new item requirement is added. Captain access and
-Morie appearance additionally require boss clear. The fixed boss Weapon Orb
+Sea Hare Tail trade gate; no new item requirement is added. Captain logical
+reachability includes defeating the normal boss challenge, so it does not
+require the boss-clear RAM flag in advance. Only the independent Captain prize
+flag (or persistent manual mark) completes the check. The Sandship area uses
+the same check-level access/completion aggregation as other areas.
+Morie is visible in the Hints layer for supported builds; actual hint
+availability/read controls remain boss-gated. The fixed boss Weapon Orb
 stays in generic inventory RAM progression, not a second Prize check. Boss and
 Captain RAM states follow save-state rollback; a permanent manual Captain mark
 or Morie read mark does not change boss/inventory RAM.
@@ -83,17 +88,22 @@ Live retest:
 1. In this project run `npm.cmd run dev`. Start SNI on `ws://localhost:23074`,
    load a compatible Open World ROM in Snes9x and run its SNI Lua bridge.
 2. Enter the game; verify Connected/Detected, Debug's Sandship support=true,
-   and total 77. Before victory boss value should be E, Captain unfinished,
-   and Morie absent from the enabled Hints layer.
+   and total 77. With Kakkara Start and Drum in logic, before victory boss value
+   should be E and Captain green but unfinished. Morie is visible but blocked
+   in the enabled Hints layer. Neither boss clear nor Morie adds a Prize check.
 3. Travel south from Kakkara through the desert/southern desert entrance and
-   defeat the shuffled boss. Verify boss value F, Captain reachable but still
-   unfinished, and Morie present. Check generic weapon-orb inventory separately.
+   defeat the shuffled boss. Verify boss value F, Captain still green and
+   unfinished (no artificial reachability transition), and Morie available.
+   Check generic weapon-orb inventory separately.
 4. Collect the Captain's randomized prize; verify generic event `2A3` resolves
-   to this seed's acquired flag, then becomes RAM complete. Do not assume a
+   to this seed's acquired flag, then becomes grey/RAM complete. Do not assume a
    particular reward. Read Morie and mark the hint read; reload the page.
-5. Load a pre-claim state: Captain RAM reverts. Load a pre-boss state: boss
-   reverts and Morie hides, but the manual read mark persists. A manual Captain
-   completion remains effective without altering boss or inventory RAM.
+5. Load a pre-claim state: Captain RAM reverts and its check is green again.
+   Load a pre-boss state: boss reverts, Captain stays green if the route is
+   reachable, and Morie remains visible but blocked; its manual read mark
+   persists. A manual Captain completion remains effective without altering
+   boss or inventory RAM. With Default Start and no entered route in Shuffle,
+   Captain must remain blocked regardless of the boss-clear flag.
 6. Reconnect with an older unsupported seed: Sandship/Captain/Morie are absent
    and the total is 76. Existing Potos/Mantis/inventory remain operational.
 7. In Shuffle/Chaos enable Cannons: click an office, then a destination. No

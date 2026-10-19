@@ -34,9 +34,9 @@ it("shows Morie blocked before victory, enables manual read afterwards, and pres
   expect(screen.queryByRole("button", { name: /Sandship - Morie Hint:/ })).toBeNull();
   ram.sandship.supported = true; ram.sandship.bossDefeated = false;
   rerender(<WorldMap {...props()} />);
-  fireEvent.click(screen.getByRole("button", { name: /^Sandship - Captain: unreachable/ }));
+  fireEvent.click(screen.getByRole("button", { name: /^Sandship - Captain: reachable/ }));
   const captain = screen.getByRole("button", { name: "Sandship - Captain" });
-  expect(captain.className).toContain("unreachable");
+  expect(captain.classList.contains("reachable")).toBe(true);
   expect(captain.getAttribute("aria-pressed")).toBe("false");
   expect(screen.getByText(/Boss: not defeated/)).toBeDefined();
   expect(screen.getByRole("button", { name: /Sandship - Morie Hint:.*blocked/ }).classList.contains("hint-blocked")).toBe(true);
@@ -62,13 +62,13 @@ it("shows Morie blocked before victory, enables manual read afterwards, and pres
   expect([...document.querySelectorAll(".map-pin")].every((pin) => pin.textContent === "" && pin.children.length === 0)).toBe(true);
 });
 
-it.each([null, false, true] as const)("uses boss state %s to gate visible Captain/Morie without rendering a boss check or adding a prize", (bossDefeated) => {
+it.each([null, false, true] as const)("boss state %s gates Morie's availability, not Captain reachability or prize completion", (bossDefeated) => {
   const props = setup(); props.ram.sandship.supported = true;
   props.ram.sandship.bossDefeated = bossDefeated; props.ram.checks[SANDSHIP.captainId] = false;
   render(<WorldMap {...props} />);
   expect(screen.queryByRole("button", { name: /^Sandship Boss:/ })).toBeNull();
   const captain = screen.getByRole("button", { name: /^Sandship - Captain:/ });
-  expect(captain.classList.contains(`pin-${bossDefeated === null ? "unknown" : bossDefeated ? "reachable" : "unreachable"}`)).toBe(true);
+  expect(captain.classList.contains("pin-reachable")).toBe(true);
   expect(captain.classList.contains("pin-completed")).toBe(false);
   expect(document.querySelectorAll('.map-pin[title^="Sandship"]')).toHaveLength(1);
   expect(countTrackerProgress(createLogicContext(props.ram, props.manualItems, props.world), props.manual)).toMatchObject({ total: 77, completed: 0 });
@@ -87,6 +87,31 @@ it.each([null, false, true] as const)("uses boss state %s to gate visible Captai
     expect(props.onSetHintRead).not.toHaveBeenCalled();
   }
   expect(props.onToggleManualCheck).not.toHaveBeenCalled();
+});
+
+it("keeps Captain green through the boss fight, greys only on prize collection, and follows rollback and travel", () => {
+  const props = setup(); props.ram.sandship.supported = true;
+  props.ram.sandship.bossDefeated = false; props.ram.sandship.bossFlagValue = 0x0e;
+  props.ram.checks[SANDSHIP.captainId] = false;
+  const { rerender } = render(<WorldMap {...props} />);
+  const pin = () => screen.getByRole("button", { name: /^Sandship - Captain:/ });
+  expect(pin().classList.contains("pin-reachable")).toBe(true);
+  props.ram.sandship.bossDefeated = true; props.ram.sandship.bossFlagValue = 0x0f;
+  rerender(<WorldMap {...props} />);
+  expect(pin().classList.contains("pin-reachable")).toBe(true);
+  expect(pin().getAttribute("aria-label")).toContain("0 of 1 complete");
+  props.ram.checks[SANDSHIP.captainId] = true;
+  rerender(<WorldMap {...props} />);
+  expect(pin().classList.contains("pin-completed")).toBe(true);
+  props.ram.checks[SANDSHIP.captainId] = false;
+  rerender(<WorldMap {...props} />);
+  expect(pin().classList.contains("pin-reachable")).toBe(true);
+  props.ram.sandship.bossDefeated = false; props.ram.sandship.bossFlagValue = 0x0e;
+  rerender(<WorldMap {...props} />);
+  expect(pin().classList.contains("pin-reachable")).toBe(true);
+  props.world.settings.startingLocation = "default"; props.world.settings.cannonMode = "shuffle";
+  rerender(<WorldMap {...props} />);
+  expect(pin().classList.contains("pin-unreachable")).toBe(true);
 });
 
 it("keeps boss RAM rollback independent from Captain RAM and persistent manual completion", () => {

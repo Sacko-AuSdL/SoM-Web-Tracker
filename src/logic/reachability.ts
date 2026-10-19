@@ -167,9 +167,11 @@ function evaluateTiers(tiers: SourceRule["accessTiers"], context: LogicContext):
 
 export function evaluateCheck(id: LocationId, context: LogicContext, manual: PersistentManualState): CheckReachability {
   if (id === "sandship-captain") {
-    const boss = context.ram.sandship.bossDefeated;
+    // The Kakkara route includes the normal boss challenge, with no extra item
+    // dependency. Already defeating it is not a logical access requirement.
+    // Only the Captain's independent prize flag/manual mark completes the check.
     return { visible: context.ram.sandship.supported === true,
-      access: andAccess([sandshipEntranceAccess(context), boss === null ? "unknown" : boss ? "reachable" : "unreachable"]),
+      access: sandshipEntranceAccess(context),
       complete: deriveEffectiveCheckState(id, context.ram, manual).complete };
   }
   const rule = CHECK_SOURCE_RULES[id];
@@ -203,12 +205,6 @@ export function evaluateArea(area: MapArea, context: LogicContext, manual: Persi
   const status: ReachabilityStatus = remaining.length === 0 ? "completed" : reachable > 0 ?
     reachable === remaining.length ? "reachable" : "partial" : unknown > 0 ? "unknown" :
       checkable > 0 ? "partial" : "unreachable";
-  // Pre-boss access to the arena is distinct from access to the Captain's prize.
-  if (area.id === "sandship" && remaining.length > 0) {
-    const entrance = sandshipEntranceAccess(context);
-    return { status: entrance === "checkable" ? "partial" : entrance,
-      completed, total: checks.length, reachable, unknown };
-  }
   return { status, completed, total: checks.length, reachable, unknown };
 }
 

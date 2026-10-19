@@ -33,7 +33,7 @@ describe("source-backed Sandship extension", () => {
     expect(evaluateCheck(SANDSHIP.captainId, context, manual).visible).toBe(supported === true);
   });
 
-  it("reuses Kakkara-start travel and gates Captain on boss clear without hiding Morie", () => {
+  it("reuses Kakkara-start travel for Captain without requiring prior boss clear or hiding Morie", () => {
     const ram = emptyRamState(), world = emptyWorldState(), manual = emptyManualState();
     ram.sandship.supported = true; ram.sandship.bossDefeated = false;
     world.settings.cannonMode = "shuffle";
@@ -43,12 +43,12 @@ describe("source-backed Sandship extension", () => {
     expect(evaluateArea(area, context(), manual).status).toBe("unreachable");
     world.settings.startingLocation = "kakkara";
     expect(evaluateArea(area, context(), manual).status).toBe("reachable");
-    expect(evaluateCheck(SANDSHIP.captainId, context(), manual)).toMatchObject({ access: "unreachable", complete: false });
+    expect(evaluateCheck(SANDSHIP.captainId, context(), manual)).toMatchObject({ access: "reachable", complete: false });
     expect(activeHintMarkers(ram.sandship).some((hint) => hint.id === SANDSHIP.hintId)).toBe(true);
     const before = countTrackerProgress(context(), manual).available;
     ram.sandship.bossDefeated = true;
     expect(evaluateCheck(SANDSHIP.captainId, context(), manual)).toMatchObject({ access: "reachable", complete: false });
-    expect(countTrackerProgress(context(), manual).available).toBe(before + 1);
+    expect(countTrackerProgress(context(), manual).available).toBe(before);
     expect(activeHintMarkers(ram.sandship).some((hint) => hint.id === SANDSHIP.hintId)).toBe(true);
     ram.checks[SANDSHIP.captainId] = true;
     expect(evaluateCheck(SANDSHIP.captainId, context(), manual).complete).toBe(true);
