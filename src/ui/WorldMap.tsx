@@ -7,7 +7,8 @@ import { activeHintMarkers } from "../data/hintMarkers";
 import { SANDSHIP } from "../data/sandship";
 import { LOCATION_BY_ID, type LocationId } from "../data/locationDefinitions";
 import type { InventoryId } from "../data/inventoryDefinitions";
-import { ELEMENTS, WEAPON_FAMILIES, requirementLabel, type OrbId, type OrbRequirement } from "../domain/orbs";
+import { requirementLabel, type OrbId, type OrbRequirement } from "../domain/orbs";
+import { OrbRequirementPicker } from "./OrbRequirementPicker";
 import { createLogicContext, evaluateArea, evaluateCheck, evaluateOrbGate, orbCompletion } from "../logic/reachability";
 import { deriveEffectiveCheckState, isManuallyCompleted, type RamState, type PersistentManualState } from "../state/trackerState";
 import type { WorldState } from "../state/worldState";
@@ -196,21 +197,16 @@ export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck,
             {requirement.kind !== "unknown" && <img className="orb-requirement" src={orbRequirementImage(requirement)!} alt={requirementLabel(requirement)} />}
             <small aria-hidden="true">{completion !== "none" ? "✓" : gate === "passable" ? "+" : gate === "blocked" ? "×" : ""}</small>
           </button>
-          {isOpen("orbs", orb.id) && <div className="map-popover" style={popupStyle(coords.left, coords.top)}>
+          {isOpen("orbs", orb.id) && <div className="map-popover orb-popover" style={popupStyle(coords.left, coords.top)}>
             <button type="button" className="popover-close" aria-label="Close popup" onClick={() => { setPinned(null); setHovered(null); }}>×</button>
             <h3>{orb.name}</h3><p className="popover-summary">Requirement: {gate} · {completionLabel}</p>
-            <p className="source-note">RAM open flags include seed-preopened Orbs. Ownership alone is not completion.</p>
             <button type="button" className="orb-manual-clear" aria-pressed={world.manualClearedOrbs.includes(orb.id)}
               onClick={() => onSetOrbCleared?.(orb.id, !world.manualClearedOrbs.includes(orb.id))}>
               {world.manualClearedOrbs.includes(orb.id) ? "Undo manual cleared mark" : "Mark Orb cleared manually"}</button>
-            <p className="source-note">Manual cleared marks persist; RAM completion follows save-state rollback.</p>
-            <div className="orb-options">
-              {world.settings.orbMode !== "weapon-only" && <><h4>Magic</h4><div>{ELEMENTS.map((element) =>
-                <button key={element} type="button" onClick={() => { onSelectOrb(orb.id, { kind: "element", element }); setPinned(null); setHovered(null); }}>{requirementLabel({ kind: "element", element })}</button>)}</div></>}
-              {world.settings.orbMode !== "magic-only" && <><h4>Weapons</h4><div>{WEAPON_FAMILIES.map((weapon) =>
-                <button key={weapon} type="button" onClick={() => { onSelectOrb(orb.id, { kind: "weapon-family", weapon }); setPinned(null); setHovered(null); }}>{requirementLabel({ kind: "weapon-family", weapon })}</button>)}</div></>}
-              <button type="button" className="unknown-option" onClick={() => { onSelectOrb(orb.id, { kind: "unknown" }); setPinned(null); setHovered(null); }}>Unknown</button>
-            </div>
+            <OrbRequirementPicker mode={world.settings.orbMode} selected={requirement} onSelect={(choice) => {
+              onSelectOrb(orb.id, choice); setPinned(null); setHovered(null);
+            }} />
+            <p className="source-note">Requirements never mark completion.</p>
           </div>}
         </div>;
       })}

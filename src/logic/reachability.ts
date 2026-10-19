@@ -2,7 +2,8 @@ import { CHECK_SOURCE_RULES, type SourceRule } from "../data/sourceWorldData";
 import type { LocationId } from "../data/locationDefinitions";
 import type { InventoryId } from "../data/inventoryDefinitions";
 import type { MapArea } from "../data/mapAreas";
-import { type Element, type OrbId, type OrbRequirement } from "../domain/orbs";
+import { ELEMENTS, WEAPON_FAMILIES, requirementAllowed, requirementId, type Element, type OrbId, type OrbRequirement } from "../domain/orbs";
+import { countManaSeeds } from "./inventory";
 import { deriveEffectiveCheckState, type PersistentManualState, type RamState } from "../state/trackerState";
 import { CHARACTERS, effectiveRole, isRoleRandomized, type Character, type WorldState } from "../state/worldState";
 import { CHECK_REGION } from "../domain/cannons";
@@ -57,9 +58,7 @@ function any(values: readonly TruthValue[]): TruthValue {
   return values.includes("unknown") ? "unknown" : false;
 }
 
-export function evaluateOrbGate(context: LogicContext, id: OrbId): OrbGateStatus {
-  const requirement: OrbRequirement = context.world.orbs[id];
-  if (requirement.kind === "unknown") return "unknown";
+function evaluateRequirementGate(context: LogicContext, requirement: Exclude<OrbRequirement, { kind: "unknown" }>): OrbGateStatus {
   if ((context.world.settings.orbMode === "magic-only" && requirement.kind !== "element") ||
       (context.world.settings.orbMode === "weapon-only" && requirement.kind !== "weapon-family")) return "blocked";
   if (requirement.kind === "weapon-family") return item(context, `weapon-${requirement.weapon}`) ? "passable" : "blocked";
@@ -71,6 +70,23 @@ export function evaluateOrbGate(context: LogicContext, id: OrbId): OrbGateStatus
   if (requirement.element === "sylphid" || requirement.element === "salamando")
     return hasRole(context, "sprite") || hasRole(context, "girl") ? "passable" : "blocked";
   return hasRole(context, "sprite") ? "passable" : "blocked";
+}
+export function evaluateOrbGate(context: LogicContext, id: OrbId): OrbGateStatus {
+  const requirement = context.world.orbs[id];
+  if (requirement.kind !== "unknown") return evaluateRequirementGate(context, requirement);
+  if (!id.startsWith("gp_orb")) return "unknown";
+  // PopTracker logic.lua hasAllElementsGP / orb.lua disabledStates: excluded
+  // requirements narrow the unknown GP pool. Extend the same rule to weapons.
+  // A known Orb identity stays authoritative, even if a GP badge conflicts.
+  const pool: Exclude<OrbRequirement, { kind: "unknown" }>[] = [
+    ...ELEMENTS.filter((element) => element === "lumina" ? !roleDisabled(context, "girl") :
+      element === "sylphid" || element === "salamando" ? !(roleDisabled(context, "girl") && roleDisabled(context, "sprite")) :
+      !roleDisabled(context, "sprite")).map((element) => ({ kind: "element" as const, element })),
+    ...WEAPON_FAMILIES.map((weapon) => ({ kind: "weapon-family" as const, weapon })),
+  ];
+  const possible = pool.filter((candidate) => requirementAllowed(context.world.settings.orbMode, candidate) &&
+    !context.world.gpNotNeeded.includes(requirementId(candidate)));
+  return possible.every((candidate) => evaluateRequirementGate(context, candidate) === "passable") ? "passable" : "unknown";
 }
 export function orbCompletion(context: LogicContext, id: OrbId): "manual" | "ram" | "none" {
   if (context.world.manualClearedOrbs.includes(id)) return "manual";
@@ -111,8 +127,8 @@ function checkFunction(name: string, context: LogicContext): TruthValue {
   if (name === "canCrossUpperLandForest") return any([item(context, "flammie-drum"), checkFunction("canDestroyUFOrb", context)]);
   if (name === "grandPalaceBoss") return all([item(context, "weapon-whip"),
     ...([1, 2, 3, 4, 5, 6, 7] as const).map((number) => checkFunction(`canDestroyGPOrb${number}`, context))]);
-  if (name === "manaTreeRevive") return (["water", "earth", "wind", "fire", "dark", "light", "moon", "tree"] as const)
-    .filter((seed) => item(context, `seed-${seed}`)).length >= world.settings.reviveSeedCount;
+  if (name === "manaTreeRevive") return world.settings.reviveSeedCount === null ? "unknown" :
+    countManaSeeds(context.ram, context.manualItems) >= world.settings.reviveSeedCount;
   if (name === "hasManaFortressAccess") return all([world.settings.goal !== "revive", checkFunction("canCutStuff", context),
     item(context, "weapon-whip"), any([world.settings.goal === "short", checkFunction("grandPalaceBoss", context)])]);
   if (name === "hasManaTreeAccess") return all([checkFunction("canCutStuff", context),
@@ -175,11 +191,15 @@ export function evaluateCheck(id: LocationId, context: LogicContext, manual: Per
       complete: deriveEffectiveCheckState(id, context.ram, manual).complete };
   }
   const rule = CHECK_SOURCE_RULES[id];
-  let access = evaluateTiers(rule.accessTiers, context);
+  // Source snapshots retain an optional FP1/checkable alternative. These four
+  // checks actually lie behind FP1 (OpenWorldLocations.cs 114-120,152,155-156).
+  // Remove only that fallback; preserve travel, Whip, and Basic/Restrictive seeds.
+  const tiers = id.startsWith("fire-palace-") ? rule.accessTiers.map((tier) =>
+    tier.filter((alternative) => !alternative.includes("[$canDestroyFPOrb1]"))) : rule.accessTiers;
+  let access = evaluateTiers(tiers, context);
   if (context.travel) {
     // Replace ONLY the inherited continent access tier, not local Orb/weapon/
     // seed gates. Matches PrizeLocation.getLockedByPrizes(region model).
-    const tiers = rule.accessTiers;
     const coarse = tiers[0]?.some((alternative) => alternative.includes("$hasDrum"));
     const local = coarse ? tiers.slice(1) : tiers;
     let localAccess = evaluateTiers(local, context);

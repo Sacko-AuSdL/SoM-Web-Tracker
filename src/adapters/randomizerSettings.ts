@@ -38,8 +38,9 @@ export function parseRandomizerSettings(raw: string): ParsedRandomizerSettings {
     (v) => { settings.partyMode = v; });
   enumValue("opLogic", { basic: "basic", restrictive: "restrictive" }, (v) => { settings.logic = v; });
   enumValue("opGoal", { vshort: "short", vlong: "long", mtr: "revive" }, (v) => { settings.goal = v; });
-  enumValue("opNumSeeds", Object.fromEntries([1, 2, 3, 4, 5, 6, 7, 8].map((n) => [String(n), String(n)])),
-    (v) => { settings.reviveSeedCount = Number(v); });
+  enumValue("opNumSeeds", Object.fromEntries([...Array.from({ length: 8 }, (_, i) => [String(i + 1), String(i + 1)]), ["random", "random"]]),
+    (v) => { settings.reviveSeedCount = v === "random" ? null : Number(v); });
+  if (settings.reviveSeedCount === null) warning("Random Revival seed count is seed-specific; identify it with Seeds needed in Settings.");
   for (const character of CHARACTERS) {
     const key = `op${character[0].toUpperCase()}${character.slice(1)}Role`;
     const value = entries.get(key) ?? `OG${character}`;

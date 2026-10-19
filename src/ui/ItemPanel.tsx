@@ -6,6 +6,8 @@ import { CHARACTERS, ROLE_LABELS, effectiveRole, isRoleRandomized, type Characte
 import type { InventoryMode } from "../state/uiPreferences";
 import { characterRoleOverlay, inventoryImage } from "./assets";
 import { availabilityLabel, characterAvailability, characterPresent } from "../domain/characters";
+import type { GpRequirementId } from "../domain/orbs";
+import { countManaSeeds } from "../logic/inventory";
 
 const categories = [
   { id: "character", title: "Characters" }, { id: "element", title: "Elements" },
@@ -24,8 +26,9 @@ interface ItemPanelProps {
   onSetMode: (mode: InventoryMode) => void;
   onToggleManualItem: (id: InventoryId) => void;
   onSetRole: (character: Character, role: Role) => void;
+  onToggleGp?: (id: GpRequirementId) => void;
 }
-export function ItemPanel({ ram, manualItems, world, mode, onSetMode, onToggleManualItem, onSetRole }: ItemPanelProps) {
+export function ItemPanel({ ram, manualItems, world, mode, onSetMode, onToggleManualItem, onSetRole, onToggleGp }: ItemPanelProps) {
   const [rolePicker, setRolePicker] = useState<{ slot: Character; left: number; top: number } | null>(null);
   const openRolePicker = (event: MouseEvent<HTMLButtonElement>, slot: Character) => {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -48,6 +51,8 @@ export function ItemPanel({ ram, manualItems, world, mode, onSetMode, onToggleMa
     <div className="item-scroll">
       {categories.map((category) => <section className="item-category" data-category={category.id} key={category.id} aria-label={category.title}>
         <h3>{category.title}</h3>
+        {category.id === "seed" && world.settings.goal === "revive" &&
+          <p className="revival-count" role="status">Mana Seeds: {countManaSeeds(ram, manualItems)} / {world.settings.reviveSeedCount ?? "Unknown"}</p>}
         <div className="item-grid">{INVENTORY_DEFINITIONS.filter((item) => item.category === category.id).map((definition) => {
           const id = definition.id;
           const ramValue = ram.inventory[id];
@@ -58,6 +63,9 @@ export function ItemPanel({ ram, manualItems, world, mode, onSetMode, onToggleMa
           const src = inventoryImage(id);
           const stageId = orbStageId[id];
           const stage = stageId ? ram.inventory[stageId] : null;
+          const gpId = (category.id === "element" && world.settings.orbMode !== "weapon-only") ||
+            (category.id === "weapon" && world.settings.orbMode !== "magic-only") ? id as GpRequirementId : null;
+          const gpRequired = gpId !== null && !world.gpNotNeeded.includes(gpId);
           const randomized = character !== null && isRoleRandomized(world, character);
           const assignedRole = character ? effectiveRole(world, character) : "unknown";
           const showRole = randomized || (character !== null && assignedRole !== character);
@@ -81,6 +89,10 @@ export function ItemPanel({ ram, manualItems, world, mode, onSetMode, onToggleMa
               {stageId && <span className="weapon-stage" title={`${definition.name} orb stage: ${stage ?? "unknown"}`}>{stage ?? "–"}</span>}
               {manual && <span className="manual-indicator" aria-hidden="true">M</span>}
             </button>
+            {gpId && <button type="button" className={`gp-badge${gpRequired ? "" : " not-required"}`}
+              aria-label={`${definition.name}: ${gpRequired ? "required" : "not required"} for Grand Palace`}
+              aria-pressed={gpRequired} title={`${definition.name}: ${gpRequired ? "required" : "not required"} for Grand Palace. Click to toggle; ownership is unchanged.`}
+              onClick={(event) => { event.stopPropagation(); onToggleGp?.(gpId); }}>GP</button>}
             {mode === "square" && character && <span className="square-character-label">{definition.name}</span>}
           </div>;
         })}</div>

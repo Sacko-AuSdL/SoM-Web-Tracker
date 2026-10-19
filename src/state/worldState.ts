@@ -2,8 +2,8 @@ import { ORB_SOURCE_DEFINITIONS } from "../data/sourceWorldData";
 import { SANDSHIP } from "../data/sandship";
 import { CANNON_OFFICE_BY_ID, connectionId, validConnection, type CannonNodeId, type CannonConnection, type CannonTravelMode, type StartingLocation } from "../domain/cannons";
 import { PARTY_MODES, type PartyMode } from "../domain/characters";
-import { ELEMENTS, WEAPON_FAMILIES, requirementAllowed,
-  type CrystalOrbMode, type OrbId, type OrbRequirement } from "../domain/orbs";
+import { ELEMENTS, WEAPON_FAMILIES, GP_REQUIREMENT_IDS, requirementAllowed,
+  type CrystalOrbMode, type GpRequirementId, type OrbId, type OrbRequirement } from "../domain/orbs";
 
 export type Character = "boy" | "girl" | "sprite";
 export type Role = Character | "unknown";
@@ -19,7 +19,7 @@ export interface WorldSettings {
   roleModeBySlot: Partial<Record<Character, "normal" | "random">>;
   fixedRoles: Partial<Record<Character, Character>>;
   goal: "short" | "long" | "revive";
-  reviveSeedCount: number;
+  reviveSeedCount: number | null;
   orbMode: CrystalOrbMode;
   cannonMode: CannonTravelMode;
   startingLocation: StartingLocation;
@@ -36,6 +36,8 @@ export interface WorldState {
   orbs: Record<OrbId, OrbRequirement>;
   manualClearedOrbs: OrbId[];
   manualReadHints: string[];
+  // Seed configuration, not ownership or Orb completion. Unmarked = required.
+  gpNotNeeded: GpRequirementId[];
   cannonConnections: CannonConnection[];
   closedCannonOffices: CannonNodeId[];
 }
@@ -50,7 +52,7 @@ export function emptyWorldState(): WorldState {
     roles: { boy: "unknown", girl: "unknown", sprite: "unknown" },
     disabledCharacters: [],
     orbs: Object.fromEntries(ORB_SOURCE_DEFINITIONS.map((orb) => [orb.id, { kind: "unknown" }])) as Record<OrbId, OrbRequirement>,
-    manualClearedOrbs: [], manualReadHints: [], cannonConnections: [], closedCannonOffices: [],
+    manualClearedOrbs: [], manualReadHints: [], gpNotNeeded: [], cannonConnections: [], closedCannonOffices: [],
   };
 }
 
@@ -64,6 +66,9 @@ export function setOrbCleared(state: WorldState, id: OrbId, cleared: boolean): W
   const marks = new Set(state.manualClearedOrbs);
   if (cleared) marks.add(id); else marks.delete(id);
   return { ...state, manualClearedOrbs: [...marks] };
+}
+export function toggleGpRequirement(state: WorldState, id: GpRequirementId): WorldState {
+  return { ...state, gpNotNeeded: state.gpNotNeeded.includes(id) ? state.gpNotNeeded.filter((value) => value !== id) : [...state.gpNotNeeded, id] };
 }
 export function setHintRead(state: WorldState, id: string, read: boolean): WorldState {
   if (id !== SANDSHIP.hintId) return state;
@@ -132,7 +137,7 @@ export function loadWorldState(storage: Storage): WorldState {
       roleModeBySlot: {},
       fixedRoles: {},
       goal: s.goal === "long" || s.goal === "revive" ? s.goal : "short",
-      reviveSeedCount: Number.isInteger(s.reviveSeedCount) && s.reviveSeedCount! >= 1 && s.reviveSeedCount! <= 8 ? s.reviveSeedCount! : 8,
+      reviveSeedCount: s.reviveSeedCount === null ? null : Number.isInteger(s.reviveSeedCount) && s.reviveSeedCount! >= 1 && s.reviveSeedCount! <= 8 ? s.reviveSeedCount! : 8,
       orbMode: s.orbMode === "mixed" || s.orbMode === "weapon-only" ? s.orbMode : "magic-only",
       cannonMode: s.cannonMode === "open" || s.cannonMode === "shuffle" || s.cannonMode === "chaos" ? s.cannonMode : "vanilla",
       startingLocation: s.startingLocation === "kakkara" ? "kakkara" : "default",
@@ -163,7 +168,8 @@ export function loadWorldState(storage: Storage): WorldState {
     const manualClearedOrbs = Array.isArray(parsed.manualClearedOrbs) ? [...new Set(parsed.manualClearedOrbs.filter(
       (id): id is OrbId => ORB_SOURCE_DEFINITIONS.some((orb) => orb.id === id)))] : [];
     const manualReadHints = Array.isArray(parsed.manualReadHints) && parsed.manualReadHints.includes(SANDSHIP.hintId) ? [SANDSHIP.hintId] : [];
-    let state: WorldState = { version: 3, settings, roles, disabledCharacters, orbs, manualClearedOrbs, manualReadHints, cannonConnections: [], closedCannonOffices: [] };
+    const gpNotNeeded = Array.isArray(parsed.gpNotNeeded) ? [...new Set(parsed.gpNotNeeded.filter((id) => GP_REQUIREMENT_IDS.includes(id)))] : [];
+    let state: WorldState = { version: 3, settings, roles, disabledCharacters, orbs, manualClearedOrbs, manualReadHints, gpNotNeeded, cannonConnections: [], closedCannonOffices: [] };
     if (Array.isArray(parsed.cannonConnections)) for (const edge of parsed.cannonConnections) if (validConnection(edge)) state = addCannonConnection(state, edge);
     if (Array.isArray(parsed.closedCannonOffices)) state.closedCannonOffices = [...new Set(parsed.closedCannonOffices.filter((id) => CANNON_OFFICE_BY_ID.has(id)))];
     return state;

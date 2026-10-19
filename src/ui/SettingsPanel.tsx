@@ -7,8 +7,10 @@ import { parseRandomizerSettings, type ParsedRandomizerSettings, type SettingsDi
 import { CHARACTERS, isRoleRandomized } from "../state/worldState";
 import { effectiveStartingLocation } from "../logic/travel";
 import { PARTY_MODES, needsAdditionalIdentity, resolvedStart, type PartyMode } from "../domain/characters";
+import type { ResetScope } from "../state/resetTracking";
 
 interface SettingsPanelProps {
+  onReset?: (scope: ResetScope) => void;
   sni: SniStatus;
   onSelectDevice: (device: string) => void;
   world: WorldState;
@@ -25,10 +27,12 @@ interface SettingsPanelProps {
 }
 
 export function SettingsPanel({ sni, onSelectDevice, world, onUpdateSetting, onSetOrbMode, onToggleDisabledCharacter,
-  dungeonMode, onSetDungeonMode, onClose, onImportSettings, onClearCannonNetwork, inventoryMode, onSetInventoryMode }: SettingsPanelProps) {
+  dungeonMode, onSetDungeonMode, onClose, onImportSettings, onClearCannonNetwork, inventoryMode, onSetInventoryMode, onReset }: SettingsPanelProps) {
   const [raw, setRaw] = useState("");
   const [diagnostics, setDiagnostics] = useState<SettingsDiagnostic[]>([]);
   const [imported, setImported] = useState(false);
+  const [pendingReset, setPendingReset] = useState<ResetScope | null>(null);
+  const resetLabels: Record<ResetScope, string> = { orbs: "Reset Crystal Orbs", manual: "Reset Manual Tracking", seed: "New Seed Reset" };
   const start = resolvedStart(world);
   return (
     <div className="modal-layer">
@@ -95,8 +99,9 @@ export function SettingsPanel({ sni, onSelectDevice, world, onUpdateSetting, onS
             <label>Goal<select value={world.settings.goal} onChange={(event) => onUpdateSetting("goal", event.target.value as WorldSettings["goal"])}>
               <option value="short">Short</option><option value="long">Long</option><option value="revive">Revive the Tree</option>
             </select></label>
-            {world.settings.goal === "revive" && <label>Seeds needed<select value={world.settings.reviveSeedCount}
-              onChange={(event) => onUpdateSetting("reviveSeedCount", Number(event.target.value))}>
+            {world.settings.goal === "revive" && <label>Seeds needed<select value={world.settings.reviveSeedCount ?? ""}
+              onChange={(event) => onUpdateSetting("reviveSeedCount", event.target.value === "" ? null : Number(event.target.value))}>
+              <option value="">Unknown (identify seed value)</option>
               {[1,2,3,4,5,6,7,8].map((count) => <option key={count} value={count}>{count}</option>)}
             </select></label>}
           </div>
@@ -116,6 +121,21 @@ export function SettingsPanel({ sni, onSelectDevice, world, onUpdateSetting, onS
               checked={world.disabledCharacters.includes(character)} onChange={() => onToggleDisabledCharacter(character)} />{character}</label>)}
           </fieldset>
           <p className="settings-hint">Changing Crystal Orb mode clears requirements that are invalid in the new mode. Check/orb settings persist locally; inventory manual marks remain session-only.</p>
+          <section className="reset-settings" aria-label="Reset tracking">
+            <h3>Reset tracking</h3>
+            <div className="reset-actions">{(["orbs", "manual", "seed"] as const).map((scope) =>
+              <button type="button" key={scope} onClick={() => setPendingReset(scope)}>{resetLabels[scope]}</button>)}</div>
+            <p className="settings-hint">All resets keep live SNI/RAM, connection settings, and inventory/map layout preferences.</p>
+            {pendingReset && <div className="reset-confirmation" role="alertdialog" aria-modal="true" aria-labelledby="reset-title">
+              <h4 id="reset-title">{resetLabels[pendingReset]}?</h4>
+              <p>{pendingReset === "orbs" ? "Clear all 14 Orb requirements, manual Orb completion, and GP selections. Keep location/Hint/item marks, imported settings, routes and role identities." :
+                pendingReset === "manual" ? "Clear manual location overrides, Orb completion, Hint read marks, and session item/character presence. Keep imported settings, Orb identities, GP selections, Cannon routes and character configuration." :
+                  "Clear all manual progress and seed configuration: Orb requirements, GP selections, Cannon routes/closed offices, roles and character identities. Imported Options String settings are RESET to tracker defaults, including Revival and character availability settings."}</p>
+              <p>Emulator memory is never changed. Cancel changes nothing.</p>
+              <button type="button" onClick={() => { onReset?.(pendingReset); if (pendingReset === "seed") { setRaw(""); setDiagnostics([]); setImported(false); } setPendingReset(null); }}>Confirm reset</button>
+              <button type="button" onClick={() => setPendingReset(null)}>Cancel</button>
+            </div>}
+          </section>
           {onClearCannonNetwork && (world.settings.cannonMode === "shuffle" || world.settings.cannonMode === "chaos") &&
             <details className="cannon-network-settings"><summary>Cannon network fallback</summary>
               <p className="settings-hint">Clear entered routes for a new seed. Closed office marks are retained; manage those at each office.</p>

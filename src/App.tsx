@@ -17,7 +17,8 @@ import { SettingsPanel } from "./ui/SettingsPanel";
 import { WorldMap } from "./ui/WorldMap";
 import { emptyWorldState, loadWorldState, saveWorldState, setOrbMode, setOrbRequirement, setRoleIdentity, setOrbCleared, setHintRead,
   addCannonConnection, removeCannonConnection, replaceCannonConnection, clearCannonConnections, setCannonOfficeClosed,
-  type Character, type Role, type WorldSettings, type WorldState } from "./state/worldState";
+  toggleGpRequirement, type Character, type Role, type WorldSettings, type WorldState } from "./state/worldState";
+import { resetTracking, type ResetScope } from "./state/resetTracking";
 import { loadUiPreferences, saveUiPreferences, type DungeonMode, type InventoryMode } from "./state/uiPreferences";
 import { applyRandomizerSettings } from "./adapters/randomizerSettings";
 import type { CannonAction } from "./ui/CannonLayer";
@@ -63,6 +64,10 @@ export default function App() {
     });
   };
   const selectDevice = (device: string) => { void autotracker.selectDevice(device); };
+  const reset = (scope: ResetScope) => {
+    const next = resetTracking(scope, { world, manual, manualItems });
+    setWorld(next.world); setManual(next.manual); setManualItems(next.manualItems);
+  };
   const updateSetting = <K extends keyof WorldSettings>(key: K, value: WorldSettings[K]) =>
     setWorld((current) => ({ ...current, settings: { ...current.settings, [key]: value,
       ...(key === "startingCharacter" || key === "partyMode" || key === "resolvedStartingCharacter" ? { additionalCharacter: null } : {}),
@@ -113,7 +118,8 @@ export default function App() {
       <div className="workspace">
         <ItemPanel ram={snapshot.ram} manualItems={manualItems} world={world} mode={ui.inventoryMode}
           onSetMode={(mode: InventoryMode) => setUi((current) => ({ ...current, inventoryMode: mode }))}
-          onToggleManualItem={toggleManualItem} onSetRole={setRole} />
+          onToggleManualItem={toggleManualItem} onSetRole={setRole}
+          onToggleGp={(id) => setWorld((current) => toggleGpRequirement(current, id))} />
         <div className={`map-surfaces${dungeon ? " with-dungeon" : ""}`}>
           <WorldMap ram={snapshot.ram} manual={manual} manualItems={manualItems} world={world}
             onToggleManualCheck={toggleManualCheck} onSelectOrb={selectOrb}
@@ -132,6 +138,7 @@ export default function App() {
       </footer>
 
       {settingsOpen && <SettingsPanel sni={snapshot.sni} onSelectDevice={selectDevice} world={world}
+        onReset={reset}
         onClearCannonNetwork={() => setWorld((current) => clearCannonConnections(current))}
         onUpdateSetting={updateSetting} onSetOrbMode={changeOrbMode} onToggleDisabledCharacter={toggleDisabledCharacter}
         onImportSettings={(parsed) => setWorld((current) => applyRandomizerSettings(current, parsed))}

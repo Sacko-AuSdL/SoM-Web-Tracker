@@ -51,7 +51,9 @@ describe("Randomizer settings adapter", () => {
     expect(parseRandomizerSettings(`${prefix} opGoal=mtr opNumSeeds=${count}`).settings?.reviveSeedCount).toBe(count);
   });
   it("does not pretend a random Revive seed count is a known global value", () => {
-    expect(parseRandomizerSettings(`${prefix} opGoal=mtr opNumSeeds=random`).settings).toBeNull();
+    const parsed = parseRandomizerSettings(`${prefix} opGoal=mtr opNumSeeds=random`);
+    expect(parsed.settings).toMatchObject({ goal: "revive", reviveSeedCount: null });
+    expect(parsed.diagnostics.some((d) => d.level === "warning" && d.message.includes("seed-specific"))).toBe(true);
   });
   it("imports per-slot random/randomunique and fixed cross-slot roles without rolling identities", () => {
     const state = applyRandomizerSettings(emptyWorldState(), parseRandomizerSettings(`${prefix} opBoyRole=random opGirlRole=OGsprite opSpriteRole=randomunique`));
