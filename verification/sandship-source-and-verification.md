@@ -180,3 +180,70 @@ src/ui/sandship.test.tsx
 src/ui/ui.test.tsx
 verification/sandship-source-and-verification.md
 ```
+
+## Final Orb / Grand Palace / Revival / reset pass (2026-10-19)
+
+No Randomizer files, check/event mappings, autotracking flags, Cannon workflow,
+or Orb map positions were changed. The Sandship Captain-before-boss regression
+and 76/77 compatibility totals remain covered by the full suite.
+
+- Orb selection uses the existing local element/weapon assets: 8/8/16 choices
+  in four columns, tooltips, selected-state borders, Unknown, close-on-select.
+- GP badges are separate sibling buttons, not ownership-button children.
+  Default is required; excluded requirements are saved in additive v3
+  `gpNotNeeded`. PopTracker `scripts/logic.lua:hasAllElementsGP` and
+  `custom_items/orb.lua:disabledStates` supply the exclusion/unknown-pool
+  semantics. The same rule extends to applicable weapon families. Known Orb
+  identities remain authoritative; badges never set ownership or completion.
+  Unknown GP gates are safely passable when every remaining possible
+  requirement is satisfiable; otherwise they remain unknown. Whip stays a
+  separate GP boss dependency. Caster-role requirements are preserved.
+- Revival uses imported `opNumSeeds` (1..8), or Unknown for `random`, with a
+  small Settings fallback. The omitted option's source default is 8
+  (`OpenWorldSettings.cs:341`), not a guessed live requirement. The counter
+  counts each acquired RAM/session Mana Seed once and only appears for Revival.
+- Fire Palace's old optional `[$canDestroyFPOrb1]` alternatives caused known
+  failures to become checkable/amber. Only that four-check fallback is removed.
+  IDs/events are entrance `fire-palace-near-entrance-chest`/68A; second
+  `fire-palace-near-orb-2`/68B; maze `fire-palace-after-little-maze`/678;
+  boss reward `fire-palace-reward-minotaur`/589. Dependencies are FP1;
+  FP1+FP2; FP1+FP2; FP1+FP2+FP3+Whip, plus Fire Seed only in Restrictive.
+  This preserves `OpenWorldLocations.cs:114-120,152,155-156` and the user's
+  confirmed Basic/Restrictive distinction. Known blocks dominate unknowns;
+  authoritative RAM clearing remains a traversal override, not prize completion.
+
+Reset scopes (all require explicit confirmation; Cancel invokes no reset):
+
+| Action | Clears | Retains |
+| --- | --- | --- |
+| Reset Crystal Orbs | 14 manual requirements, manual Orb clears, GP exclusions | Check/Hint/item marks, imported settings, routes, roles/availability |
+| Reset Manual Tracking | Persistent check overrides, manual Orb clears, Morie reads, session inventory/character marks | Imported settings, requirements, GP, routes/closed offices, role/availability identities, Revival settings |
+| New Seed Reset | All manual progress and world/seed configuration, including imported settings back to defaults | UI/layout/dungeon preferences, connection settings, live RAM |
+
+Store audit: location/manual overrides use `som-web-tracker:manual-state`;
+world/seed data use `som-web-tracker:world-state:v3`; UI uses its separate v1
+store. Inventory marks are session-only. There is no manually entered Hint-text
+store or UI in this tracker, so no such category is silently retained and no new
+Hint-text feature was added. Resets persist empty current records rather than
+deleting keys, so existing v1/v2 migrations cannot resurrect deleted marks.
+World v1/v2/v3 migrations remain supported; older data get empty GP exclusions.
+No `localStorage.clear()` is used by application/reset code, and no reset has
+access to emulator memory or the transport.
+
+Browser smoke testing used an isolated origin `http://127.0.0.1:5184/`, not the
+user's normal saved tracker origin. Normal 1280x720, Compact 960x540, and Square
+1280x720 were inspected visually. The 16-icon grid had equal client/scroll
+heights (129px), fit within the viewport, and retained a selected Axe outline.
+Known unowned Axe made Fire Palace red, and selection closed the popup.
+Magic/Weapon modes each showed 8 icons; Unknown selection and GP independence
+worked. Imported 5 seeds and three session marks displayed `Mana Seeds: 3 / 5`.
+Actual browser reload retained GP/Orb/configuration/layout and cleared the
+historically session-only item marks. Confirmation text and cancellation were
+checked visually; destructive reset execution/reload/reconnect/rollback were
+covered through App integration tests with mocked SNI snapshots.
+
+Screenshots are local-only under ignored `tmp/verification/` (not app assets).
+All automated checks passed: 357 tests / 34 files, TypeScript typecheck, and
+production Vite build. Real SNI connected and game detection appeared during
+the smoke test, but no controlled emulator save-state rollback/reset scenario
+was performed. That remains a live retest item; no emulator input was sent.
