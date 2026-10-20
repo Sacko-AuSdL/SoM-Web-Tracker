@@ -157,6 +157,25 @@ function waitForTrackerSnapshot(
 }
 
 describe("SniClient usb2snes flow", () => {
+  it("tracks Girl's native physical membership with zero reward flags through rollback and socket reconnect", async () => {
+    vi.stubGlobal("WebSocket", MockWebSocket);
+    mockMemory.set(0xf5cf0c, new Uint8Array([0,0,0]));
+    mockMemory.set(0xf500d9, new Uint8Array([2]));
+    const tracker = new PotosAutotracker("ws://mock-sni:23074"); tracker.start();
+    try {
+      const girl = await waitForTrackerSnapshot(tracker, (s) => s.gameDetected && s.ram.inventory.girl === true);
+      expect(girl.ram.inventory.boy).toBe(false); expect(girl.game?.partyMask).toBe(2);
+      mockMemory.set(0xf500d9, new Uint8Array([6]));
+      await waitForTrackerSnapshot(tracker, (s) => s.ram.inventory.sprite === true);
+      mockMemory.set(0xf500d9, new Uint8Array([2]));
+      await waitForTrackerSnapshot(tracker, (s) => s.ram.inventory.sprite === false && s.ram.inventory.girl === true);
+      const previousSockets = MockWebSocket.instances.length;
+      MockWebSocket.instances.at(-1)!.close();
+      const reconnected = await waitForTrackerSnapshot(tracker, (s) => MockWebSocket.instances.length > previousSockets && s.gameDetected && s.ram.inventory.girl === true);
+      expect(reconnected.ram.inventory.sprite).toBe(false);
+      expect(reconnected.inventory.girl).toMatchObject({ address: 0x7e00d9, rawValue: 2, decodedValue: true });
+    } finally { tracker.stop(); }
+  }, 10000);
   function installSandship(claimFlag = 0xca) {
     for (const [index, signature] of SANDSHIP_EVENT_SIGNATURES.entries()) {
       const pointer = 0xe16000 + index * 0x100;

@@ -60,6 +60,7 @@ export function SettingsPanel({ sni, onSelectDevice, world, onUpdateSetting, onS
             {onSetInventoryMode && <label>Inventory Layout<select value={inventoryMode ?? "normal"}
               onChange={(event) => onSetInventoryMode(event.target.value as InventoryMode)}>
               <option value="normal">Normal</option><option value="compact">Compact</option><option value="square">Square</option>
+              <option value="broadcast">Broadcast (N/C/S or Escape to return)</option>
             </select></label>}
             <label>Logic<select value={world.settings.logic} onChange={(event) => onUpdateSetting("logic", event.target.value as WorldSettings["logic"])}>
               <option value="basic">Basic</option><option value="restrictive">Restrictive</option>
@@ -97,10 +98,11 @@ export function SettingsPanel({ sni, onSelectDevice, world, onUpdateSetting, onS
               <option value="auto">Auto (verified maps only)</option><option value="hidden">Hidden</option>
             </select></label>
             <label>Goal<select value={world.settings.goal} onChange={(event) => onUpdateSetting("goal", event.target.value as WorldSettings["goal"])}>
-              <option value="short">Short</option><option value="long">Long</option><option value="revive">Revive the Tree</option>
+              <option value="short">Short</option><option value="long">Long</option><option value="revive">Mana Tree Revival (MTR)</option>
             </select></label>
           </div>
           {world.settings.goal === "revive" && <p className="settings-hint">Resolve the required Mana Seed count directly at the Inventory counter. Unknown / Reset restores the imported requirement.</p>}
+          {world.settings.spellShuffle !== "off" && <p className="settings-hint">Spell Shuffle: {world.settings.spellShuffle}. Seed-specific Orb-compatible spell assignments are not encoded in the Settings String; uncleared magic gates may remain unknown.</p>}
           <p className="settings-hint">Effective start: {effectiveStartingLocation(world.settings) === "kakkara" ? "Kakkara" : "Default"}.
             Kakkara requires Flammie Drum in logic. Open: deterministic routes; Shuffle/Chaos: enter known routes on the map.</p>
           <div className="slot-role-settings">{CHARACTERS.map((slot) => <label key={slot}>{slot} role

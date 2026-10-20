@@ -39,12 +39,20 @@ export function parseRandomizerSettings(raw: string): ParsedRandomizerSettings {
     (v) => { settings.partyMode = v; });
   enumValue("opLogic", { basic: "basic", restrictive: "restrictive" }, (v) => { settings.logic = v; });
   enumValue("opGoal", { vshort: "short", vlong: "long", mtr: "revive" }, (v) => { settings.goal = v; });
+  enumValue("spellShuffle", { off: "off", perCharacter: "perCharacter", party: "party" }, (v) => { settings.spellShuffle = v; });
   const seedOptions = Object.fromEntries(Array.from({ length: MANA_SEED_MAX - MANA_SEED_MIN + 1 }, (_, i) => [String(i + MANA_SEED_MIN), String(i + MANA_SEED_MIN)]));
   enumValue("opNumSeeds", { ...seedOptions, random: "random" },
     (v) => { settings.reviveSeedCount = v === "random" ? null : Number(v); });
   let seedMin = MANA_SEED_MIN, seedMax = MANA_SEED_MAX;
   enumValue("opMinSeeds", seedOptions, (v) => { seedMin = Number(v); });
   enumValue("opMaxSeeds", seedOptions, (v) => { seedMax = Number(v); });
+  // Some live/export strings contain only the bounds. Honor that explicit
+  // range rather than silently displaying the omitted source default (8).
+  // An explicit opNumSeeds fixed value always remains authoritative.
+  if (!entries.has("opNumSeeds") && (entries.has("opMinSeeds") || entries.has("opMaxSeeds"))) {
+    settings.reviveSeedCount = null;
+    warning("MTR bounds supplied without opNumSeeds; using the explicit range, not assuming an exact rolled count.");
+  }
   if (settings.reviveSeedCount === null) {
     // OpenWorldMtrSeedNumSelection.cs clamps min to max, not a sorted range.
     if (seedMin > seedMax) { seedMin = seedMax; warning("Revival minimum exceeds maximum; source clamps minimum to maximum."); }
@@ -61,7 +69,7 @@ export function parseRandomizerSettings(raw: string): ParsedRandomizerSettings {
     } else error(`Unrecognized ${key}=${value}; no settings applied.`);
   }
   const recognized = new Set(["version", "mode", "crystalOrbWeaponBreaking", "cannonTravelRandomization", "opFlammieDrumInLogic",
-    "opStartingLocation", "opStartChar", "opCharacters", "spoilerLog", "opStartGold", "opLogic", "opGoal", "opNumSeeds", "opMinSeeds", "opMaxSeeds", "opBoyRole", "opGirlRole", "opSpriteRole"]);
+    "opStartingLocation", "opStartChar", "opCharacters", "spoilerLog", "opStartGold", "opLogic", "opGoal", "opNumSeeds", "opMinSeeds", "opMaxSeeds", "opBoyRole", "opGirlRole", "opSpriteRole", "spellShuffle"]);
   for (const key of entries.keys()) if (!recognized.has(key)) warning(`${key} is not imported; use manual controls for any tracker-relevant effect.`);
   if (settings.startingLocation === "kakkara" && settings.drumLogic !== "random")
     warning("Kakkara is selected but inactive: the source requires Flammie Drum in logic. Effective start is Default.");

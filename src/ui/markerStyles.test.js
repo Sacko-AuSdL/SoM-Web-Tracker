@@ -1,6 +1,14 @@
 import { readFileSync } from "node:fs";
 import { expect, it } from "vitest";
 
+it("Broadcast is pure black and borderless, compactly shares the same icons without capture controls", () => {
+  const css = readFileSync("src/styles.css", "utf8");
+  expect(css).toContain("body:has(.inventory-broadcast) { background: #000000; min-width: 0; overflow: hidden; }");
+  expect(css).toContain("width: min(270px, 100vw)");
+  expect(css).toContain(".inventory-broadcast .item-card");
+  expect(css).toContain("border: 0; border-radius: 0; padding: 0; background: #000000;");
+});
+
 it("keeps unknown GP knowledge visually quiet but discoverable on hover, keyboard focus and touch", () => {
   const css = readFileSync("src/styles.css", "utf8");
   expect(css).toMatch(/\.gp-badge\.unknown\s*\{\s*opacity: 0;/);

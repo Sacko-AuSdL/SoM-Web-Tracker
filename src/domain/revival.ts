@@ -19,3 +19,7 @@ export function revivalRequiredCount(world: WorldState): number | null {
   const range = world.settings.reviveSeedRange;
   return world.manualReviveSeedCount ?? world.settings.reviveSeedCount ?? (range && range.min === range.max ? range.min : null);
 }
+export function revivalRequirementLabel(world: WorldState): string {
+  const count = revivalRequiredCount(world), range = world.settings.reviveSeedRange;
+  return count !== null ? String(count) : range ? `${range.min}–${range.max}` : "Unknown";
+}

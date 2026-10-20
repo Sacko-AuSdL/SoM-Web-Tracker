@@ -1,7 +1,8 @@
 import { ORB_SOURCE_DEFINITIONS } from "../data/sourceWorldData";
 
-export const ELEMENTS = ["gnome", "undine", "sylphid", "salamando", "shade", "lumina", "luna", "dryad"] as const;
-export const WEAPON_FAMILIES = ["gloves", "sword", "axe", "spear", "whip", "bow", "boomerang", "javelin"] as const;
+// Presentation only: native RAM indices remain explicitly bound by stable ID.
+export const ELEMENTS = ["undine", "gnome", "sylphid", "salamando", "shade", "lumina", "luna", "dryad"] as const;
+export const WEAPON_FAMILIES = ["sword", "spear", "gloves", "boomerang", "bow", "axe", "whip", "javelin"] as const;
 export type Element = typeof ELEMENTS[number];
 export type WeaponFamily = typeof WEAPON_FAMILIES[number];
 export type CrystalOrbMode = "magic-only" | "mixed" | "weapon-only";

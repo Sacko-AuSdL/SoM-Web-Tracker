@@ -11,7 +11,7 @@ installation of the tracker.** No ROM, emulator or SNI installation is bundled.
 ## Features
 
 - World-map checks, reachability and completion counters.
-- Normal, Compact and Square inventory layouts, including stream-friendly views.
+- Normal, Compact and Square inventory layouts, plus an icon-only Broadcast view.
 - Local SNI autotracking with manual tracking as a fallback.
 - Randomizer Settings String import, Crystal Orbs, Cannon Travel and Kakkara Start.
 - Compatible Sandship builds: one Captain prize check, plus a separate Morie hint.
@@ -21,7 +21,7 @@ installation of the tracker.** No ROM, emulator or SNI installation is bundled.
 
 1. [Open Web Tracker](https://sacko-ausdl.github.io/SoM-Web-Tracker/).
 2. In **Settings**, import your Randomizer Settings String or review the options.
-3. Choose **N / C / S** for your preferred inventory layout. Drag/zoom the map;
+3. Choose **N / C / S / B** for your preferred inventory layout. Drag/zoom the map;
    hover or click a marker for details. Green is reachable, red blocked,
    amber unknown/partial, and grey completed.
 4. Click a Crystal Orb to record its known requirement. Orb requirements and
@@ -29,9 +29,27 @@ installation of the tracker.** No ROM, emulator or SNI installation is bundled.
 5. Use an item's GP corner to cycle **Unknown → Required → Not Required**.
    Unknown stays visually quiet; confirmed hints show GP or struck-through GP.
    These controls do not change ownership or complete Orbs.
-6. For Mana Tree Revival, click the required count beside **Mana Seeds** in
-   Inventory. Choose 1–8 (or only the imported range). **Unknown / Reset** removes
-   your override and restores the imported requirement.
+6. For **Mana Tree Revival (MTR)**, click the required count beside **Mana Seeds**
+   in Inventory. An unresolved imported range is displayed directly (for example
+   `3 / 5–7`). Choose an exact count in that range, or **Unknown / Reset** to
+   restore it. Without restrictive bounds the choices are 1–8.
+
+### Broadcast / OBS
+
+Choose **B**, or open the tracker with **`?view=broadcast`** appended to its URL.
+Broadcast shows only the same inventory icons on pure black—no map, panels,
+headings, check counters or layout buttons. Missing items stay dimmed; role
+overlays and weapon Orb stages remain meaningful. A **280 × 180** browser source
+fits the compact five-row inventory; larger frames simply add black space.
+
+Focus the page (OBS: **Interact**) and press **N**, **C**, **S** or **Escape** to
+return. Layout choice persists. Use Normal/Compact/Square for settings, GP hints
+and the MTR dropdown before switching to Broadcast.
+
+OBS Browser Source and your regular browser may use separate browser storage
+and separate local SNI connections. There is **no invented synchronization**:
+configure the OBS source itself when needed. Live SNI feeds its own inventory;
+manual session marks belong to the tab in which you made them.
 
 Progress/configuration stays in this browser, not in a cloud account. Use
 **New Seed Reset** when changing seeds; the tracker does not automatically keep
@@ -65,7 +83,8 @@ trusted tracker origin**. If previously denied, review that site's permissions
 and reload. Chrome/Edge, Firefox and Safari can behave differently by version
 and policy; a permission prompt is not guaranteed.
 
-**Public HTTPS SNI with a real emulator is not yet certified.** Use **Debug**
+The user has successfully live-tested public HTTPS SNI with a real emulator;
+this is not a guarantee for every browser or OBS version. Use **Debug**
 and the [browser diagnostic guide](docs/deployment.md#sni-over-https) to distinguish
 a browser block, missing SNI service, missing device and unsupported game.
 Do not disable browser security globally. Manual tracking remains available;
@@ -107,6 +126,7 @@ Open the printed preview URL under `/SoM-Web-Tracker/` to test the production bu
 On Windows, use `npm.cmd` if PowerShell blocks `npm.ps1`.
 
 Details: [deployment and HTTPS/SNI diagnostics](docs/deployment.md),
+[post-release mapping audit and live-retest findings](docs/post-release-live-fixes.md),
 [Cannon network, option mappings, event/chest audit and implementation reference](docs/technical-reference.md),
 [source findings and dated verification history](docs/sandship-source-and-verification.md),
 and [source provenance](source/provenance.json).

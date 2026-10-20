@@ -1,5 +1,6 @@
 import type { SniClient } from "./SniClient";
 import type { EventCompletionStrategy } from "../domain/tracker";
+import { PARTY_MEMBERS_ADDRESS } from "../data/inventoryDefinitions";
 import {
   readU16LittleEndian,
   readU24LittleEndian,
@@ -57,6 +58,7 @@ export interface GameDetectionResult {
   currentMap: number;
   nmiFirstByte: number;
   characterFlags: [number, number, number];
+  partyMask?: number;
 }
 
 export interface EventCheckRamResult {
@@ -124,10 +126,13 @@ export function parseEventCompletionStrategy(
 }
 
 export async function detectSecretOfMana(client: SniClient): Promise<GameDetectionResult> {
-  const [mapBytes, nmiBytes, characterBytes] = await Promise.all([
+  const [mapBytes, nmiBytes, characterBytes, partyBytes] = await Promise.all([
     client.readMemory(usb2snesAddressForSnesBus(CURRENT_MAP_ADDRESS), 2),
     client.readMemory(usb2snesAddressForSnesBus(NMI_VECTOR_ADDRESS), 1),
     client.readMemory(usb2snesAddressForSnesBus(CHARACTER_FLAGS_ADDRESS), 3),
+    // Supplemental detection evidence must not invalidate the original shared
+    // reads if this isolated party byte is temporarily unavailable.
+    client.readMemory(usb2snesAddressForSnesBus(PARTY_MEMBERS_ADDRESS), 1).catch(() => new Uint8Array()),
   ]);
 
   const currentMap = readU16LittleEndian(mapBytes);
@@ -137,9 +142,11 @@ export async function detectSecretOfMana(client: SniClient): Promise<GameDetecti
     characterBytes[1],
     characterBytes[2],
   ];
-  const hasCharacterSetup =
+  const partyMask = partyBytes[0];
+  const nativePartyReady = partyMask > 0 && partyMask <= 7;
+  const hasCharacterSetup = nativePartyReady || (
     characterFlags.every((flag) => flag === 0 || flag === 1) &&
-    characterFlags.reduce((sum, flag) => sum + flag, 0) > 0;
+    characterFlags.reduce((sum, flag) => sum + flag, 0) > 0);
   const inTitle = nmiFirstByte === 0x40;
 
   return {
@@ -148,6 +155,7 @@ export async function detectSecretOfMana(client: SniClient): Promise<GameDetecti
     currentMap,
     nmiFirstByte,
     characterFlags,
+    partyMask,
   };
 }
 

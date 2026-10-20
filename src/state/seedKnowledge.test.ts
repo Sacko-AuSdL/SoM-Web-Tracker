@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { GP_REQUIREMENT_IDS } from "../domain/orbs";
-import { allowedRevivalCounts, revivalRequiredCount } from "../domain/revival";
+import { allowedRevivalCounts, revivalRequiredCount, revivalRequirementLabel } from "../domain/revival";
+import { LIVE_SETTINGS } from "../testFixtures/liveSettings";
 import { applyRandomizerSettings, parseRandomizerSettings } from "../adapters/randomizerSettings";
 import { cycleGpHint, emptyWorldState, gpHintState, loadWorldState, saveWorldState, setGpHint, setReviveSeedResolution } from "./worldState";
 import { emptyManualState, emptyRamState } from "./trackerState";
@@ -70,6 +71,28 @@ describe("explicit per-item GP hint knowledge", () => {
 });
 
 describe("MTR imported definition versus inline manual resolution", () => {
+  it("imports the exact live export as an unresolved 5–7 range, with physical identity/roles separate", () => {
+    const parsed = parseRandomizerSettings(LIVE_SETTINGS);
+    expect(parsed.settings).toMatchObject({ goal: "revive", reviveSeedCount: null, reviveSeedRange: { min: 5, max: 7 },
+      spellShuffle: "perCharacter", orbMode: "mixed", cannonMode: "chaos", logic: "restrictive", startingCharacter: "girl", partyMode: "find-one-current",
+      fixedRoles: { sprite: "boy" }, additionalCharacter: null });
+    expect(revivalRequirementLabel(applyRandomizerSettings(emptyWorldState(), parsed))).toBe("5–7");
+  });
+  it.each([["opMinSeeds=5 opMaxSeeds=5", "5"], ["opMinSeeds=5 opMaxSeeds=7", "5–7"],
+    ["opNumSeeds=random", "1–8"], ["opMinSeeds=8 opMaxSeeds=5", "5"], ["opNumSeeds=4 opMinSeeds=5 opMaxSeeds=7", "4"]])("displays %s as %s", (options, label) => {
+    expect(revivalRequirementLabel(imported(options))).toBe(label);
+  });
+  it("persists exact/range definitions separately, resets to the imported range and clears a changed seed definition", () => {
+    const original = applyRandomizerSettings(emptyWorldState(), parseRandomizerSettings(LIVE_SETTINGS));
+    const store = storage(); saveWorldState(store, setReviveSeedResolution(original, 6));
+    const loaded = loadWorldState(store); expect(revivalRequirementLabel(loaded)).toBe("6");
+    expect(revivalRequirementLabel(setReviveSeedResolution(loaded, null))).toBe("5–7");
+    const changed = applyRandomizerSettings(loaded, parseRandomizerSettings("opGoal=mtr opMinSeeds=1 opMaxSeeds=8"));
+    expect(changed.manualReviveSeedCount).toBeNull(); expect(revivalRequirementLabel(changed)).toBe("1–8");
+    const manual = resetTracking("manual", { world: loaded, manual: emptyManualState(), manualItems: new Set() });
+    expect(revivalRequirementLabel(manual.world)).toBe("6");
+    expect(resetTracking("seed", manual).world.manualReviveSeedCount).toBeNull();
+  });
   it.each([1, 5, 8])("preserves fixed import %s unless explicitly overridden, and Reset restores it", (count) => {
     const original = imported(`opNumSeeds=${count}`);
     expect(revivalRequiredCount(original)).toBe(count); expect(allowedRevivalCounts(original.settings)).toEqual([1,2,3,4,5,6,7,8]);

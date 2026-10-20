@@ -9,6 +9,14 @@ import { cycleGpHint, emptyWorldState, setReviveSeedResolution } from "../state/
 import { applyRandomizerSettings, parseRandomizerSettings } from "../adapters/randomizerSettings";
 
 afterEach(cleanup);
+
+it("uses the independently confirmed canonical order for all element/weapon picker identities", () => {
+  render(<OrbRequirementPicker mode="mixed" selected={{ kind: "unknown" }} onSelect={vi.fn()} />);
+  expect([...document.querySelectorAll('.orb-choice')].map(button => button.getAttribute('aria-label'))).toEqual([
+    "Undine","Gnome","Sylphid","Salamando","Shade","Lumina","Luna","Dryad",
+    "Sword","Spear","Glove","Boomerang","Bow","Axe","Whip","Javelin",
+  ]);
+});
 it.each([["magic-only", 8], ["weapon-only", 8], ["mixed", 16]] as const)("renders %s as %s icon-only choices with full tooltips and an Unknown reset", (mode, count) => {
   const onSelect = vi.fn();
   const { rerender } = render(<OrbRequirementPicker mode={mode} selected={{ kind: "unknown" }} onSelect={onSelect} />);
@@ -57,11 +65,11 @@ it.each(["normal", "compact", "square"] as const)("GP badge is an independent cl
   expect(screen.getByRole("status", { name: "Mana Seeds: 3 / 5" })).toBeDefined();
   expect(document.querySelectorAll(".gp-badge")).toHaveLength(16);
 });
-it("shows Unknown for a random Revival requirement, manual fallback after identification, and no counter for other goals", () => {
+it("shows the unresolved range for random MTR, manual resolution, and no counter for other goals", () => {
   let world = applyRandomizerSettings(emptyWorldState(), parseRandomizerSettings("opGoal=mtr opNumSeeds=random"));
   const props = { world, ram: emptyRamState(), manualItems: new Set<never>(), mode: "normal" as const, onSetMode: vi.fn(), onSetRole: vi.fn(), onToggleManualItem: vi.fn() };
   const { rerender } = render(<ItemPanel {...props} />);
-  expect(screen.getByRole("status", { name: "Mana Seeds: 0 / Unknown" })).toBeDefined();
+  expect(screen.getByRole("status", { name: "Mana Seeds: 0 / 1–8" })).toBeDefined();
   world = setReviveSeedResolution(world, 4); rerender(<ItemPanel {...props} world={world} />);
   expect(screen.getByRole("status", { name: "Mana Seeds: 0 / 4" })).toBeDefined();
   world.settings.goal = "short"; rerender(<ItemPanel {...props} world={world} />);
@@ -86,6 +94,6 @@ it.each(["normal", "compact", "square"] as const)("MTR dropdown in %s contains o
   fireEvent.change(select, { target: { value: "7" } });
   expect(screen.getByRole("status", { name: "Mana Seeds: 0 / 7" })).toBeDefined();
   fireEvent.change(select, { target: { value: "" } });
-  expect(screen.getByRole("status", { name: "Mana Seeds: 0 / Unknown" })).toBeDefined();
+  expect(screen.getByRole("status", { name: "Mana Seeds: 0 / 5–8" })).toBeDefined();
   expect(screen.queryByRole("dialog")).toBeNull();
 });

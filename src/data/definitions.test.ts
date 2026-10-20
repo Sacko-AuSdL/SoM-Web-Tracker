@@ -57,7 +57,7 @@ describe("PopTracker data migration", () => {
 
   it("preserves PopTracker RAM order for seeds, elements, and weapons", () => {
     const expected: Record<string, number> = {
-      boy: 0x7ecf0c, girl: 0x7ecf0d, sprite: 0x7ecf0e,
+      boy: 0x7e00d9, girl: 0x7e00d9, sprite: 0x7e00d9,
       "sea-hare-tail": 0x7ecf29, "gold-tower-key": 0x7ecf37,
       "midge-mallet": 0x7ecf5c, "moogle-belt": 0x7ecf74,
       "flammie-drum": 0x7ecf76,

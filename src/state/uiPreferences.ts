@@ -1,4 +1,4 @@
-export type InventoryMode = "normal" | "compact" | "square";
+export type InventoryMode = "normal" | "compact" | "square" | "broadcast";
 export type DungeonMode = "auto" | "hidden";
 export interface UiPreferences { version: 1; inventoryMode: InventoryMode; dungeonMode: DungeonMode }
 
@@ -8,7 +8,7 @@ export function loadUiPreferences(storage: Storage): UiPreferences {
   try {
     const parsed = JSON.parse(storage.getItem(KEY) ?? "null") as Partial<UiPreferences> | null;
     if (parsed?.version !== 1) return emptyUiPreferences();
-    return { version: 1, inventoryMode: parsed.inventoryMode === "compact" || parsed.inventoryMode === "square" ? parsed.inventoryMode : "normal",
+    return { version: 1, inventoryMode: parsed.inventoryMode === "compact" || parsed.inventoryMode === "square" || parsed.inventoryMode === "broadcast" ? parsed.inventoryMode : "normal",
       dungeonMode: parsed.dungeonMode === "hidden" ? "hidden" : "auto" };
   } catch { return emptyUiPreferences(); }
 }

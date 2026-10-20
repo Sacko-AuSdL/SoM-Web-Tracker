@@ -27,13 +27,13 @@ describe("office-local Cannon release polish", () => {
     expect(document.querySelector(".cannon-pin.source")).toBeNull();
     expect(onAction).not.toHaveBeenCalled();
   });
-  it("exposes the three inventory layouts and a collapsed marker legend in Settings, not the map", () => {
+  it("exposes the four inventory layouts and a collapsed marker legend in Settings, not the map", () => {
     const onSetInventoryMode = vi.fn();
     render(<SettingsPanel world={emptyWorldState()} sni={{ endpoint: "ws://mock", phase: "disconnected", devices: [], attachedDevice: null, serverInfo: [], error: null }}
       onSelectDevice={vi.fn()} onClose={vi.fn()} dungeonMode="auto" onSetDungeonMode={vi.fn()} onToggleDisabledCharacter={vi.fn()}
       onSetOrbMode={vi.fn()} onUpdateSetting={vi.fn()} onImportSettings={vi.fn()} inventoryMode="compact" onSetInventoryMode={onSetInventoryMode} />);
     const select = screen.getByRole("combobox", { name: "Inventory Layout" });
-    expect([...select.querySelectorAll("option")].map((o) => o.textContent)).toEqual(["Normal", "Compact", "Square"]);
+    expect([...select.querySelectorAll("option")].map((o) => o.textContent)).toEqual(["Normal", "Compact", "Square", "Broadcast (N/C/S or Escape to return)"]);
     fireEvent.change(select, { target: { value: "square" } });
     expect(onSetInventoryMode).toHaveBeenCalledWith("square");
     const legend = screen.getByText("Map marker legend").closest("details")!;

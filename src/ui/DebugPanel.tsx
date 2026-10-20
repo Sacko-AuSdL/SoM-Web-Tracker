@@ -3,6 +3,9 @@ import { INVENTORY_DEFINITIONS } from "../data/inventoryDefinitions";
 import { activeLocationDefinitions } from "../data/locationDefinitions";
 import type { EventCompletionStrategy } from "../domain/tracker";
 import { ORB_SOURCE_DEFINITIONS } from "../data/sourceWorldData";
+import { moonPalaceDiagnostics, type LogicContext } from "../logic/reachability";
+import { CHARACTERS, effectiveRole } from "../state/worldState";
+import { characterPresent } from "../domain/characters";
 
 function hex(value: number | null | undefined, width = 2): string {
   return value == null ? "—" : `0x${value.toString(16).toUpperCase().padStart(width, "0")}`;
@@ -19,9 +22,9 @@ function diagnosticValue(value: boolean | number | null | undefined): string {
   return value == null ? "—" : String(value);
 }
 
-interface DebugPanelProps { snapshot: AutotrackerSnapshot; onClose: () => void }
+interface DebugPanelProps { snapshot: AutotrackerSnapshot; context?: LogicContext; onClose: () => void }
 
-export function DebugPanel({ snapshot, onClose }: DebugPanelProps) {
+export function DebugPanel({ snapshot, context, onClose }: DebugPanelProps) {
   const table = Object.values(snapshot.locations).flatMap((location) => location.events)
     .find((event) => event.eventPointerTable != null)?.eventPointerTable;
   return (
@@ -37,6 +40,9 @@ export function DebugPanel({ snapshot, onClose }: DebugPanelProps) {
           <dt>Current map</dt><dd>{hex(snapshot.game?.currentMap, 4)}</dd>
           <dt>NMI byte</dt><dd>{hex(snapshot.game?.nmiFirstByte)}</dd>
           <dt>Character flags</dt><dd>{snapshot.game?.characterFlags.join(", ") ?? "—"}</dd>
+          <dt>Physical party mask (0x7E00D9)</dt><dd>{hex(snapshot.game?.partyMask)}</dd>
+          {context && <><dt>Physical identity → presence → role</dt><dd>{CHARACTERS.map((slot) => `${slot}: ${characterPresent(context.world, snapshot.ram, context.manualItems, slot)} → ${effectiveRole(context.world, slot)}`).join(" | ")}</dd>
+            <dt>Spell Shuffle</dt><dd>{context.world.settings.spellShuffle}</dd></>}
           <dt>Event pointer table</dt><dd>{hex(table, 6)}</dd>
           <dt>Last poll</dt><dd>{snapshot.lastPollAt ?? "—"}</dd>
           <dt>SNI/game error</dt><dd>{snapshot.error ?? "—"}</dd>
@@ -47,6 +53,10 @@ export function DebugPanel({ snapshot, onClose }: DebugPanelProps) {
           <dt>Sandship boss (0x7ECF28 == 0x0F)</dt><dd>{diagnosticValue(snapshot.ram.sandship.bossDefeated)} / {hex(snapshot.ram.sandship.bossFlagValue)}</dd>
           <dt>Sandship error</dt><dd>{snapshot.ram.sandship.error ?? "—"}</dd>
         </dl>
+        {context && <section aria-label="Moon Palace reachability diagnostics"><h3>Moon Palace blockers</h3>
+          <dl className="debug-grid">{moonPalaceDiagnostics(context).map((factor) => <div className="debug-event" key={factor.label}><dt>{factor.label}</dt><dd>{factor.access}</dd></div>)}</dl>
+          <p className="source-note">Orb clearing does not remove independent Flammie travel or Restrictive Moon Seed requirements. Unknown shuffled spell assignments are not inferred from spirit ownership.</p>
+        </section>}
         <h3>Locations</h3>
         {activeLocationDefinitions(snapshot.ram.sandship.supported).map((location) => {
           const diagnostic = snapshot.locations[location.id];

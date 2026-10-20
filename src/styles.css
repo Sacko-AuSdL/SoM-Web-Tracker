@@ -1,4 +1,16 @@
 @font-face { font-family: Manaspace; src: url("/fonts/manaspc.ttf") format("truetype"); font-display: swap; }
+/* Same inventory/state, capture-only presentation. N/C/S or Escape exits. */
+body:has(.inventory-broadcast) { background: #000000; min-width: 0; overflow: hidden; }
+.tracker-shell.inventory-broadcast { display: block; background: #000000; }
+.inventory-broadcast .workspace { display: block; height: 100%; background: #000000; }
+.inventory-broadcast .item-panel { display: block; width: min(270px, 100vw); height: auto; max-height: none; border: 0; padding: 0; background: #000000; }
+.inventory-broadcast .item-scroll { display: flex; flex-direction: column; gap: 2px; padding: 0; overflow: visible; }
+.inventory-broadcast .item-category { margin: 0; }
+.inventory-broadcast .item-grid { grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 2px; }
+.inventory-broadcast .item-card, .inventory-broadcast .inventory-slot.acquired .item-card { min-height: 0; height: auto; aspect-ratio: 1; border: 0; border-radius: 0; padding: 0; background: #000000; }
+.inventory-broadcast .item-icon { width: 100%; height: 100%; }
+.inventory-broadcast .weapon-stage { right: 0; bottom: 0; min-width: 9px; height: 10px; padding: 0; font-size: 8px; border: 0; background: #000000; }
+.inventory-broadcast .item-card:focus-visible { outline: 1px solid #ffe4aa; outline-offset: -1px; }
 :root {
   font-family: Inter, "Segoe UI", system-ui, sans-serif;
   color: #e6edf5;
@@ -31,7 +43,7 @@
 .inventory-compact .workspace { grid-template-columns: 146px minmax(0, 1fr); }
 .inventory-compact .item-panel .panel-heading { padding: 5px; min-height: 43px; }
 .inventory-compact .item-panel .eyebrow { display: none; }
-.inventory-compact .item-panel h2 { font-size: 12px; }
+.inventory-compact .item-panel h2 { font-size: 10px; }
 .inventory-compact .inventory-mode-toggle button { width: 17px; }
 .inventory-compact .item-scroll { padding: 5px; }
 .inventory-compact .item-category { margin-bottom: 4px; }

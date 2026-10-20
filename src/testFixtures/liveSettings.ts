@@ -1,0 +1,2 @@
+// Exact user-provided live-test export; never used as an application default.
+export const LIVE_SETTINGS = "version=1.49 mode=open weaponUpgradeCosts=reduced opMinSeeds=5 opMaxSeeds=7 crystalOrbWeaponBreaking=on spellShuffle=perCharacter cannonTravelRandomization=chaos freeCannonTravel=on showUpperLandOrbRequirement=on opSpriteRole=OGboy opCharacters=find1CL opGoal=mtr opLogic=restrictive opStartChar=girl opFlammieDrumInLogic=yes";

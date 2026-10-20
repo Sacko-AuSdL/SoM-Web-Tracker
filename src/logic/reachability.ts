@@ -67,6 +67,13 @@ function evaluateRequirementGate(context: LogicContext, requirement: Exclude<Orb
   const magicBypassed = roleDisabled(context, "sprite") && roleDisabled(context, "girl");
   if (magicBypassed) return "passable";
   if (!hasElement(context, requirement.element)) return "blocked";
+  if (context.world.settings.spellShuffle !== "off") {
+    // SpellShuffleAssignments.getOrbCasters depends on seed-owned effect
+    // permutations, not the vanilla Girl/Sprite element rule. Never invent
+    // those permutations from settings or assume ownership implies a hit.
+    return CHARACTERS.some((character) => hasCharacter(context, character) &&
+      effectiveRole(context.world, character) !== "boy") ? "unknown" : "blocked";
+  }
   if (requirement.element === "lumina") return hasRole(context, "girl") ? "passable" : "blocked";
   if (requirement.element === "sylphid" || requirement.element === "salamando")
     return hasRole(context, "sprite") || hasRole(context, "girl") ? "passable" : "blocked";
@@ -235,4 +242,14 @@ export function sandshipEntranceAccess(context: LogicContext): AccessLevel {
   // Reuse the Kakkara travel region, or its inherited source access tier.
   // Exclude the Sea Hare Tail trade gate: it does not gate the desert route.
   return context.travel?.kakkara ?? evaluateTiers(CHECK_SOURCE_RULES["kakkara-npc"].accessTiers.slice(0, 1), context);
+}
+
+export function moonPalaceDiagnostics(context: LogicContext): { label: string; access: AccessLevel }[] {
+  const rule = CHECK_SOURCE_RULES["moon-palace-seed"];
+  const toAccess = (value: TruthValue): AccessLevel => value === "unknown" ? "unknown" : value ? "reachable" : "unreachable";
+  return [
+    { label: "Flammie-only travel", access: context.travel?.flammieOnly ?? evaluateTiers(rule.accessTiers.slice(0, 2), context) },
+    { label: "Moon Palace Orb traversal (RAM/manual clear overrides casting)", access: toAccess(checkFunction("canDestroyMPOrb", context)) },
+    { label: "Moon Seed (Restrictive only)", access: toAccess(checkFunction("hasMoonPalaceAccess", context)) },
+  ];
 }

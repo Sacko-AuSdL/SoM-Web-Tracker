@@ -16,6 +16,7 @@ export interface WorldSettings {
   logic: "basic" | "restrictive";
   drumLogic: "normal" | "random";
   roleMode: "normal" | "random";
+  spellShuffle: "off" | "perCharacter" | "party";
   // Per-slot Randomizer options can override the existing global PopTracker mode on import.
   roleModeBySlot: Partial<Record<Character, "normal" | "random">>;
   fixedRoles: Partial<Record<Character, Character>>;
@@ -51,7 +52,7 @@ const LEGACY_KEY = "som-web-tracker:world-state:v1";
 export function emptyWorldState(): WorldState {
   return {
     version: 3,
-    settings: { logic: "basic", drumLogic: "normal", roleMode: "normal", roleModeBySlot: {}, fixedRoles: {}, goal: "short", reviveSeedCount: 8, reviveSeedRange: null, orbMode: "magic-only", cannonMode: "vanilla", startingLocation: "default", startingCharacter: "boy", resolvedStartingCharacter: null, partyMode: "find-both-level-1", additionalCharacter: null },
+    settings: { logic: "basic", drumLogic: "normal", roleMode: "normal", spellShuffle: "off", roleModeBySlot: {}, fixedRoles: {}, goal: "short", reviveSeedCount: 8, reviveSeedRange: null, orbMode: "magic-only", cannonMode: "vanilla", startingLocation: "default", startingCharacter: "boy", resolvedStartingCharacter: null, partyMode: "find-both-level-1", additionalCharacter: null },
     roles: { boy: "unknown", girl: "unknown", sprite: "unknown" },
     disabledCharacters: [],
     orbs: Object.fromEntries(ORB_SOURCE_DEFINITIONS.map((orb) => [orb.id, { kind: "unknown" }])) as Record<OrbId, OrbRequirement>,
@@ -150,6 +151,7 @@ export function loadWorldState(storage: Storage): WorldState {
       logic: s.logic === "restrictive" ? "restrictive" : "basic",
       drumLogic: s.drumLogic === "random" ? "random" : "normal",
       roleMode: s.roleMode === "random" ? "random" : "normal",
+      spellShuffle: s.spellShuffle === "perCharacter" || s.spellShuffle === "party" ? s.spellShuffle : "off",
       roleModeBySlot: {},
       fixedRoles: {},
       goal: s.goal === "long" || s.goal === "revive" ? s.goal : "short",

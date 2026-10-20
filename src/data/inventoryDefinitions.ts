@@ -3,14 +3,18 @@ import type { InventoryDefinition } from "../domain/tracker";
 export const ITEMS_BASE_ADDRESS = 0x7ecf00;
 export const WEAPON_ORB_BASE_ADDRESS = ITEMS_BASE_ADDRESS + 0xb8;
 export const WEAPON_OWNERSHIP_BASE_ADDRESS = ITEMS_BASE_ADDRESS + 0xc8;
+// StartingCharacterRandomizer.cs: $D9 is physical party membership, not role
+// or the later reward/event flags $CF0C..0E. Boy/Girl/Sprite = bits 1/2/4.
+export const PARTY_MEMBERS_ADDRESS = 0x7e00d9;
+const partyMember = (mask: number) => (value: number): boolean => (value & mask) !== 0;
 
 export const decodePresent = (value: number): boolean => value > 0;
 export const decodeStage = (value: number): number => value;
 
 export const INVENTORY_DEFINITIONS = [
-  { id: "boy", name: "Boy", category: "character", address: ITEMS_BASE_ADDRESS + 0x0c, valueKind: "boolean", decode: decodePresent },
-  { id: "girl", name: "Girl", category: "character", address: ITEMS_BASE_ADDRESS + 0x0d, valueKind: "boolean", decode: decodePresent },
-  { id: "sprite", name: "Sprite", category: "character", address: ITEMS_BASE_ADDRESS + 0x0e, valueKind: "boolean", decode: decodePresent },
+  { id: "boy", name: "Boy", category: "character", address: PARTY_MEMBERS_ADDRESS, valueKind: "boolean", decode: partyMember(1) },
+  { id: "girl", name: "Girl", category: "character", address: PARTY_MEMBERS_ADDRESS, valueKind: "boolean", decode: partyMember(2) },
+  { id: "sprite", name: "Sprite", category: "character", address: PARTY_MEMBERS_ADDRESS, valueKind: "boolean", decode: partyMember(4) },
   { id: "sea-hare-tail", name: "Sea Hare Tail", category: "key-item", address: ITEMS_BASE_ADDRESS + 0x29, valueKind: "boolean", decode: decodePresent },
   { id: "gold-tower-key", name: "Gold Tower Key", category: "key-item", address: ITEMS_BASE_ADDRESS + 0x37, valueKind: "boolean", decode: decodePresent },
   { id: "midge-mallet", name: "Midge Mallet", category: "key-item", address: ITEMS_BASE_ADDRESS + 0x5c, valueKind: "boolean", decode: decodePresent },

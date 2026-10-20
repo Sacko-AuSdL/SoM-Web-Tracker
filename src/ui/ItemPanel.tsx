@@ -6,9 +6,9 @@ import { CHARACTERS, ROLE_LABELS, effectiveRole, gpHintState, isRoleRandomized, 
 import type { InventoryMode } from "../state/uiPreferences";
 import { characterRoleOverlay, inventoryImage } from "./assets";
 import { availabilityLabel, characterAvailability, characterPresent } from "../domain/characters";
-import type { GpRequirementId } from "../domain/orbs";
+import { ELEMENTS, WEAPON_FAMILIES, type GpRequirementId } from "../domain/orbs";
 import { countManaSeeds } from "../logic/inventory";
-import { allowedRevivalCounts, revivalRequiredCount } from "../domain/revival";
+import { allowedRevivalCounts, revivalRequiredCount, revivalRequirementLabel } from "../domain/revival";
 
 const categories = [
   { id: "character", title: "Characters" }, { id: "element", title: "Elements" },
@@ -21,6 +21,8 @@ const orbStageId: Partial<Record<InventoryId, InventoryId>> = {
   "weapon-whip": "weapon-orbs-whip", "weapon-bow": "weapon-orbs-bow",
   "weapon-boomerang": "weapon-orbs-boomerang", "weapon-javelin": "weapon-orbs-javelin",
 };
+const presentationIds: readonly string[] = [...ELEMENTS.map((id) => `element-${id}`), ...WEAPON_FAMILIES.map((id) => `weapon-${id}`)];
+const displayDefinitions = [...INVENTORY_DEFINITIONS].sort((a, b) => presentationIds.indexOf(a.id) - presentationIds.indexOf(b.id));
 interface ItemPanelProps {
   ram: RamState; manualItems: ReadonlySet<InventoryId>; world: WorldState;
   mode: InventoryMode;
@@ -32,6 +34,8 @@ interface ItemPanelProps {
 }
 export function ItemPanel({ ram, manualItems, world, mode, onSetMode, onToggleManualItem, onSetRole, onToggleGp, onResolveRevival }: ItemPanelProps) {
   const neededSeeds = revivalRequiredCount(world);
+  const neededLabel = revivalRequirementLabel(world);
+  const broadcast = mode === "broadcast";
   const seedCount = countManaSeeds(ram, manualItems);
   const [rolePicker, setRolePicker] = useState<{ slot: Character; left: number; top: number } | null>(null);
   const openRolePicker = (event: MouseEvent<HTMLButtonElement>, slot: Character) => {
@@ -42,7 +46,7 @@ export function ItemPanel({ ram, manualItems, world, mode, onSetMode, onToggleMa
     });
   };
   return <aside className="item-panel" data-layout={mode} aria-label="Inventory">
-    <div className="panel-heading"><div><span className="eyebrow">YOUR PARTY</span><h2>Inventory</h2></div>
+    {!broadcast && <div className="panel-heading"><div><span className="eyebrow">YOUR PARTY</span><h2>Inventory</h2></div>
       <div className="inventory-mode-toggle" aria-label="Inventory layout">
         <button type="button" aria-label="Normal inventory" title="Normal" aria-pressed={mode === "normal"}
           onClick={() => onSetMode("normal")}>N</button>
@@ -50,15 +54,17 @@ export function ItemPanel({ ram, manualItems, world, mode, onSetMode, onToggleMa
           onClick={() => onSetMode("compact")}>C</button>
         <button type="button" aria-label="Square inventory" title="Square" aria-pressed={mode === "square"}
           onClick={() => onSetMode("square")}>S</button>
+        <button type="button" aria-label="Broadcast inventory" title="Broadcast · return with N/C/S or Escape" aria-pressed={false}
+          onClick={() => onSetMode("broadcast")}>B</button>
       </div>
-    </div>
+    </div>}
     <div className="item-scroll">
       {categories.map((category) => <section className="item-category" data-category={category.id} key={category.id} aria-label={category.title}>
-        <h3>{category.title}</h3>
-        {category.id === "seed" && world.settings.goal === "revive" &&
-          <p className="revival-count" role="status" aria-label={`Mana Seeds: ${seedCount} / ${neededSeeds ?? "Unknown"}`}>
-            Mana Seeds: {seedCount} / <span className="revival-required" title={`Required: ${neededSeeds ?? "Unknown"}${world.manualReviveSeedCount !== null ? " (manual resolution)" : " (imported/configured)"}. Click to choose. Unknown / Reset removes only the manual resolution.`}>
-              <span aria-hidden="true">{neededSeeds ?? "Unknown"}</span>
+        {!broadcast && <h3>{category.title}</h3>}
+        {!broadcast && category.id === "seed" && world.settings.goal === "revive" &&
+          <p className="revival-count" role="status" aria-label={`Mana Seeds: ${seedCount} / ${neededLabel}`}>
+            Mana Seeds: {seedCount} / <span className="revival-required" title={`Mana Tree Revival (MTR). Required: ${neededLabel}${world.manualReviveSeedCount !== null ? " (manual resolution)" : " (imported/configured)"}. Click to choose. Unknown / Reset removes only the manual resolution.`}>
+              <span aria-hidden="true">{neededLabel}</span>
               <select aria-label="Required Mana Seeds" value={neededSeeds ?? ""}
                 onChange={(event) => onResolveRevival?.(event.target.value === "" ? null : Number(event.target.value))}>
                 <option value="">Unknown / Reset</option>
@@ -66,7 +72,7 @@ export function ItemPanel({ ram, manualItems, world, mode, onSetMode, onToggleMa
               </select>
             </span>
           </p>}
-        <div className="item-grid">{INVENTORY_DEFINITIONS.filter((item) => item.category === category.id).map((definition) => {
+        <div className="item-grid">{displayDefinitions.filter((item) => item.category === category.id).map((definition) => {
           const id = definition.id;
           const ramValue = ram.inventory[id];
           const manual = manualItems.has(id);
@@ -76,8 +82,8 @@ export function ItemPanel({ ram, manualItems, world, mode, onSetMode, onToggleMa
           const src = inventoryImage(id);
           const stageId = orbStageId[id];
           const stage = stageId ? ram.inventory[stageId] : null;
-          const gpId = (category.id === "element" && world.settings.orbMode !== "weapon-only") ||
-            (category.id === "weapon" && world.settings.orbMode !== "magic-only") ? id as GpRequirementId : null;
+          const gpId = !broadcast && ((category.id === "element" && world.settings.orbMode !== "weapon-only") ||
+            (category.id === "weapon" && world.settings.orbMode !== "magic-only")) ? id as GpRequirementId : null;
           const gpHint = gpId ? gpHintState(world, gpId) : "unknown";
           const gpLabel = gpHint === "unknown" ? "Grand Palace hint unknown" : `${gpHint === "required" ? "required" : "not required"} for Grand Palace`;
           const nextGpLabel = gpHint === "unknown" ? "required" : gpHint === "required" ? "not required" : "unknown";
@@ -95,14 +101,14 @@ export function ItemPanel({ ram, manualItems, world, mode, onSetMode, onToggleMa
               title={`${definition.name}${character ? " slot" : ""} · ${status}${availability ? ` · ${availabilityLabel(availability)}` : ""}${randomized ? ` · randomized role: ${ROLE_LABELS[assignedRole]}. Click to choose.` :
                 `. Click to ${manual ? "clear" : "add"} session mark.`}`}>
               {src && <img src={src} alt="" className="item-icon" />}
-              {availability && <span className={`availability-badge ${availability.disposition}`} data-availability={availability.disposition}
+              {availability && !broadcast && <span className={`availability-badge ${availability.disposition}`} data-availability={availability.disposition}
                 aria-label={availabilityLabel(availability)} title={availabilityLabel(availability)}>
                 {availability.disposition === "starting" ? "S" : availability.disposition === "findable" ? "F" : availability.disposition === "absent" ? "×" : "…"}
               </span>}
               {showRole && <img src={characterRoleOverlay(assignedRole)} alt="" className="role-overlay"
                 data-role={assignedRole} aria-hidden="true" />}
               {stageId && <span className="weapon-stage" title={`${definition.name} orb stage: ${stage ?? "unknown"}`}>{stage ?? "–"}</span>}
-              {manual && <span className="manual-indicator" aria-hidden="true">M</span>}
+              {manual && !broadcast && <span className="manual-indicator" aria-hidden="true">M</span>}
             </button>
             {gpId && <button type="button" className={`gp-badge ${gpHint}`} data-gp-state={gpHint}
               aria-label={`${definition.name}: ${gpLabel}`} aria-pressed={gpHint === "unknown" ? "mixed" : gpHint === "required"}
@@ -113,7 +119,7 @@ export function ItemPanel({ ram, manualItems, world, mode, onSetMode, onToggleMa
         })}</div>
       </section>)}
     </div>
-    <p className="panel-note">Click items for session marks; randomized characters open a role picker. Weapon numbers show orb stages.</p>
+    {!broadcast && <p className="panel-note">Click items for session marks; randomized characters open a role picker. Weapon numbers show orb stages.</p>}
     {rolePicker && isRoleRandomized(world, rolePicker.slot) && createPortal(<div className="role-picker"
       role="dialog" aria-label={`${rolePicker.slot} randomized role`} style={{ left: rolePicker.left, top: rolePicker.top }}>
       <div className="role-picker-heading"><strong>{rolePicker.slot} slot · role</strong>

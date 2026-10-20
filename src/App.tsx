@@ -31,9 +31,31 @@ export default function App() {
   const [manual, setManual] = useState<PersistentManualState>(() => loadManualState(window.localStorage));
   const [manualItems, setManualItems] = useState<ReadonlySet<InventoryId>>(() => new Set());
   const [world, setWorld] = useState<WorldState>(() => typeof window === "undefined" ? emptyWorldState() : loadWorldState(window.localStorage));
-  const [ui, setUi] = useState(() => loadUiPreferences(window.localStorage));
+  const [ui, setUi] = useState(() => {
+    const preferences = loadUiPreferences(window.localStorage);
+    return new URLSearchParams(window.location.search).get("view") === "broadcast" ? { ...preferences, inventoryMode: "broadcast" as const } : preferences;
+  });
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [debugOpen, setDebugOpen] = useState(false);
+  const setInventoryMode = (mode: InventoryMode) => {
+    if (mode !== "broadcast" && new URLSearchParams(window.location.search).get("view") === "broadcast") {
+      const url = new URL(window.location.href); url.searchParams.delete("view");
+      window.history.replaceState(null, "", url);
+    }
+    setUi((current) => ({ ...current, inventoryMode: mode }));
+    if (mode === "broadcast") { setSettingsOpen(false); setDebugOpen(false); }
+  };
+  useEffect(() => {
+    if (ui.inventoryMode !== "broadcast") return;
+    const exitBroadcast = (event: KeyboardEvent) => {
+      if (event.ctrlKey || event.altKey || event.metaKey || (event.target instanceof HTMLElement && event.target.matches("input,select,textarea,[contenteditable]"))) return;
+      const modes: Record<string, InventoryMode> = { n: "normal", c: "compact", s: "square", Escape: "normal" };
+      const mode = modes[event.key === "Escape" ? event.key : event.key.toLowerCase()];
+      if (mode) { event.preventDefault(); setInventoryMode(mode); }
+    };
+    window.addEventListener("keydown", exitBroadcast);
+    return () => window.removeEventListener("keydown", exitBroadcast);
+  }, [ui.inventoryMode]);
 
   useEffect(() => {
     const unsubscribe = autotracker.subscribe(setSnapshot);
@@ -90,12 +112,13 @@ export default function App() {
     return clearCannonConnections(current);
   });
   const sniConnected = snapshot.sni.phase === "attached";
-  const progress = countTrackerProgress(createLogicContext(snapshot.ram, manualItems, world), manual);
+  const logicContext = createLogicContext(snapshot.ram, manualItems, world);
+  const progress = countTrackerProgress(logicContext, manual);
   const dungeon = activeDungeon(ui.dungeonMode, snapshot.gameDetected ? snapshot.game?.currentMap : null);
 
   return (
     <div className={`tracker-shell inventory-${ui.inventoryMode}`}>
-      <header className="topbar">
+      {ui.inventoryMode !== "broadcast" && <header className="topbar">
         <div className="brand">
           <div><strong>Secret of Mana</strong><span>Open Mode Tracker</span></div></div>
         <div className="top-status">
@@ -113,30 +136,30 @@ export default function App() {
             <i aria-hidden="true" /> Game <strong>{snapshot.gameDetected ? "Detected" : "Not detected"}</strong>
           </span>
         </div>
-      </header>
+      </header>}
 
       <div className="workspace">
         <ItemPanel ram={snapshot.ram} manualItems={manualItems} world={world} mode={ui.inventoryMode}
-          onSetMode={(mode: InventoryMode) => setUi((current) => ({ ...current, inventoryMode: mode }))}
+          onSetMode={setInventoryMode}
           onToggleManualItem={toggleManualItem} onSetRole={setRole}
           onToggleGp={(id) => setWorld((current) => cycleGpHint(current, id))}
           onResolveRevival={(count) => setWorld((current) => setReviveSeedResolution(current, count))} />
-        <div className={`map-surfaces${dungeon ? " with-dungeon" : ""}`}>
+        {ui.inventoryMode !== "broadcast" && <div className={`map-surfaces${dungeon ? " with-dungeon" : ""}`}>
           <WorldMap ram={snapshot.ram} manual={manual} manualItems={manualItems} world={world}
             onToggleManualCheck={toggleManualCheck} onSelectOrb={selectOrb}
             onSetOrbCleared={(id, cleared) => setWorld((current) => setOrbCleared(current, id, cleared))}
             onSetHintRead={(id, read) => setWorld((current) => setHintRead(current, id, read))}
             onCannonAction={cannonAction} />
           {dungeon && <DungeonMapPanel dungeon={dungeon} />}
-        </div>
+        </div>}
       </div>
 
-      <footer className="footerbar">
+      {ui.inventoryMode !== "broadcast" && <footer className="footerbar">
         <div><button type="button" onClick={() => setSettingsOpen(true)}>Settings</button>
           <button type="button" onClick={() => setDebugOpen((open) => !open)} aria-expanded={debugOpen}>Debug</button></div>
         <div className="footer-meta"><a href={`${import.meta.env.BASE_URL}POPTRACKER_LICENSE.txt`} target="_blank" rel="noreferrer">PopTracker source notice</a>
           <a href={`${import.meta.env.BASE_URL}fonts/license.txt`} target="_blank" rel="noreferrer">Manaspace · zone38</a></div>
-      </footer>
+      </footer>}
 
       {settingsOpen && <SettingsPanel sni={snapshot.sni} onSelectDevice={selectDevice} world={world}
         onReset={reset}
@@ -145,10 +168,10 @@ export default function App() {
         onImportSettings={(parsed) => setWorld((current) => applyRandomizerSettings(current, parsed))}
         dungeonMode={ui.dungeonMode}
         inventoryMode={ui.inventoryMode}
-        onSetInventoryMode={(mode) => setUi((current) => ({ ...current, inventoryMode: mode }))}
+        onSetInventoryMode={setInventoryMode}
         onSetDungeonMode={(mode: DungeonMode) => setUi((current) => ({ ...current, dungeonMode: mode }))}
         onClose={() => setSettingsOpen(false)} />}
-      {debugOpen && <DebugPanel snapshot={snapshot} onClose={() => setDebugOpen(false)} />}
+      {debugOpen && <DebugPanel snapshot={snapshot} context={logicContext} onClose={() => setDebugOpen(false)} />}
     </div>
   );
 }
