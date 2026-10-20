@@ -42,7 +42,7 @@
     "boss": "Existing Mech Rider 1 slot; death 2A1 calls fixed Weapon Orb event 504 then sets flag 28 to F; WRAM 7ECF28, equality F only",
     "morie": "sandship-morie-hint; map 91 object 0, event 2A2; repeatable dialogue with no read flag; additive manual read persistence",
     "compatibility": "Version 1.49 is shared with older builds. Read relocated event pointers and require full 28A/2A1 and post-boss guard/dialogue 2A3/2A2 signatures; unavailable/unsupported inactive; totals derived from active definitions",
-    "report": "verification/sandship-source-and-verification.md"
+    "report": "docs/sandship-source-and-verification.md"
   },
   "displayPositions": { "sandship": "Approximate regional map position (660,1690), south of Kakkara (660,1484)", "underseaPalace": "Display-only screen offset (-8,+8), unchanged source coordinate (3400,3575)", "earthPalaceOrb": "28 screen pixels below unchanged Gaia source coordinate", "gaiasNavelCannon": "Original CannonTravelModel coordinate (0x7f, 0xc2)*16; 36px smooth display shift left at scale <=0.12, fading to zero by 0.35; shared by pins/routes", "upperLandOrb": "Existing display position (1770,2505) reviewed and retained, left of Sprite Village" },
   "font": { "name": "Manaspace", "author": "codeman38 / zone38", "file": "public/fonts/manaspc.ttf", "notice": "public/fonts/license.txt", "scope": "Original font terms retained, not repository MIT" }

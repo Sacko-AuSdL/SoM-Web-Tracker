@@ -2,10 +2,21 @@
   "name": "som-web-tracker",
   "private": true,
   "version": "0.1.0",
+  "description": "Unofficial browser tracker for Secret of Mana Randomizer Open Mode, with manual tracking and local SNI autotracking.",
+  "license": "MIT",
+  "homepage": "https://sacko-ausdl.github.io/SoM-Web-Tracker/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Sacko-AuSdL/SoM-Web-Tracker.git"
+  },
+  "bugs": { "url": "https://github.com/Sacko-AuSdL/SoM-Web-Tracker/issues" },
+  "engines": { "node": ">=24" },
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "check:dist": "node scripts/verify-dist.mjs",
     "test": "vitest run",
     "typecheck": "tsc -b --noEmit",
     "generate:map": "node scripts/generate-map-groups.mjs"

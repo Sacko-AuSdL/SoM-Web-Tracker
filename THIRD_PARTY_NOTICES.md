@@ -21,7 +21,7 @@ No Randomizer executable/library is bundled or linked; its source is not a
 runtime dependency and was not modified for this project.
 The local Open World Sandship extension also informed optional location/event
 identities and minimal compatibility signatures; the inspected files and
-flag/prize model are recorded in `verification/sandship-source-and-verification.md`
+flag/prize model are recorded in `docs/sandship-source-and-verification.md`
 and `source/provenance.json`. No wholesale Randomizer source was copied.
 Dependency packages retain their respective licenses supplied with those
 packages. `package-lock.json` records their versions.

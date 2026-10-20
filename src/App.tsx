@@ -134,8 +134,8 @@ export default function App() {
       <footer className="footerbar">
         <div><button type="button" onClick={() => setSettingsOpen(true)}>Settings</button>
           <button type="button" onClick={() => setDebugOpen((open) => !open)} aria-expanded={debugOpen}>Debug</button></div>
-        <div className="footer-meta"><a href="/POPTRACKER_LICENSE.txt" target="_blank" rel="noreferrer">PopTracker source notice</a>
-          <a href="/fonts/license.txt" target="_blank" rel="noreferrer">Manaspace · zone38</a></div>
+        <div className="footer-meta"><a href={`${import.meta.env.BASE_URL}POPTRACKER_LICENSE.txt`} target="_blank" rel="noreferrer">PopTracker source notice</a>
+          <a href={`${import.meta.env.BASE_URL}fonts/license.txt`} target="_blank" rel="noreferrer">Manaspace · zone38</a></div>
       </footer>
 
       {settingsOpen && <SettingsPanel sni={snapshot.sni} onSelectDevice={selectDevice} world={world}

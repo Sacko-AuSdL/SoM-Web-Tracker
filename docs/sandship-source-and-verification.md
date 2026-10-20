@@ -1,5 +1,11 @@
 # Sandship source findings and verification
 
+Historical verification notes below are retained as a record of their dated
+passes. For the current GP tri-state, inline MTR control, release checks and
+HTTPS/SNI limitations see [deployment notes](deployment.md) and the
+[technical reference](technical-reference.md). Default GP knowledge is now
+Unknown, not Required; the MTR resolution control is in Inventory, not Settings.
+
 Authoritative source: the existing local `SecretOfManaRandomizer/SoMRandomizer`
 checkout, inspected read-only. No Randomizer files, ROMs or game state were changed.
 These are source-backed identities and small event signatures, not a bundled
