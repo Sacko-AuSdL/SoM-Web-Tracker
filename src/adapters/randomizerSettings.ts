@@ -1,4 +1,5 @@
 import { CHARACTERS, emptyWorldState, setOrbMode, type Character, type WorldSettings, type WorldState } from "../state/worldState";
+import { allowedRevivalCounts, MANA_SEED_MIN, MANA_SEED_MAX } from "../domain/revival";
 
 export interface SettingsDiagnostic { level: "warning" | "error"; message: string }
 export interface ParsedRandomizerSettings { settings: WorldSettings | null; diagnostics: SettingsDiagnostic[]; sourceVersion: string | null }
@@ -38,9 +39,18 @@ export function parseRandomizerSettings(raw: string): ParsedRandomizerSettings {
     (v) => { settings.partyMode = v; });
   enumValue("opLogic", { basic: "basic", restrictive: "restrictive" }, (v) => { settings.logic = v; });
   enumValue("opGoal", { vshort: "short", vlong: "long", mtr: "revive" }, (v) => { settings.goal = v; });
-  enumValue("opNumSeeds", Object.fromEntries([...Array.from({ length: 8 }, (_, i) => [String(i + 1), String(i + 1)]), ["random", "random"]]),
+  const seedOptions = Object.fromEntries(Array.from({ length: MANA_SEED_MAX - MANA_SEED_MIN + 1 }, (_, i) => [String(i + MANA_SEED_MIN), String(i + MANA_SEED_MIN)]));
+  enumValue("opNumSeeds", { ...seedOptions, random: "random" },
     (v) => { settings.reviveSeedCount = v === "random" ? null : Number(v); });
-  if (settings.reviveSeedCount === null) warning("Random Revival seed count is seed-specific; identify it with Seeds needed in Settings.");
+  let seedMin = MANA_SEED_MIN, seedMax = MANA_SEED_MAX;
+  enumValue("opMinSeeds", seedOptions, (v) => { seedMin = Number(v); });
+  enumValue("opMaxSeeds", seedOptions, (v) => { seedMax = Number(v); });
+  if (settings.reviveSeedCount === null) {
+    // OpenWorldMtrSeedNumSelection.cs clamps min to max, not a sorted range.
+    if (seedMin > seedMax) { seedMin = seedMax; warning("Revival minimum exceeds maximum; source clamps minimum to maximum."); }
+    settings.reviveSeedRange = { min: seedMin, max: seedMax };
+    if (seedMin !== seedMax) warning("Random Revival seed count is seed-specific; resolve it directly at the Inventory Mana Seeds counter.");
+  }
   for (const character of CHARACTERS) {
     const key = `op${character[0].toUpperCase()}${character.slice(1)}Role`;
     const value = entries.get(key) ?? `OG${character}`;
@@ -51,7 +61,7 @@ export function parseRandomizerSettings(raw: string): ParsedRandomizerSettings {
     } else error(`Unrecognized ${key}=${value}; no settings applied.`);
   }
   const recognized = new Set(["version", "mode", "crystalOrbWeaponBreaking", "cannonTravelRandomization", "opFlammieDrumInLogic",
-    "opStartingLocation", "opStartChar", "opCharacters", "spoilerLog", "opStartGold", "opLogic", "opGoal", "opNumSeeds", "opBoyRole", "opGirlRole", "opSpriteRole"]);
+    "opStartingLocation", "opStartChar", "opCharacters", "spoilerLog", "opStartGold", "opLogic", "opGoal", "opNumSeeds", "opMinSeeds", "opMaxSeeds", "opBoyRole", "opGirlRole", "opSpriteRole"]);
   for (const key of entries.keys()) if (!recognized.has(key)) warning(`${key} is not imported; use manual controls for any tracker-relevant effect.`);
   if (settings.startingLocation === "kakkara" && settings.drumLogic !== "random")
     warning("Kakkara is selected but inactive: the source requires Flammie Drum in logic. Effective start is Default.");
@@ -67,5 +77,8 @@ export function applyRandomizerSettings(state: WorldState, parsed: ParsedRandomi
   if (settings.startingCharacter === state.settings.startingCharacter) settings.resolvedStartingCharacter = state.settings.resolvedStartingCharacter;
   if (settings.startingCharacter === state.settings.startingCharacter && settings.partyMode === state.settings.partyMode)
     settings.additionalCharacter = state.settings.additionalCharacter;
-  return { ...modeAdjusted, settings };
+  const sameRevivalDefinition = state.settings.goal === settings.goal && state.settings.reviveSeedCount === settings.reviveSeedCount &&
+    state.settings.reviveSeedRange?.min === settings.reviveSeedRange?.min && state.settings.reviveSeedRange?.max === settings.reviveSeedRange?.max;
+  const manualReviveSeedCount = sameRevivalDefinition && state.manualReviveSeedCount !== null && allowedRevivalCounts(settings).includes(state.manualReviveSeedCount) ? state.manualReviveSeedCount : null;
+  return { ...modeAdjusted, settings, manualReviveSeedCount };
 }

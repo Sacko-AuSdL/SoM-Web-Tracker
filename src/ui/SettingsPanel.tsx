@@ -99,12 +99,8 @@ export function SettingsPanel({ sni, onSelectDevice, world, onUpdateSetting, onS
             <label>Goal<select value={world.settings.goal} onChange={(event) => onUpdateSetting("goal", event.target.value as WorldSettings["goal"])}>
               <option value="short">Short</option><option value="long">Long</option><option value="revive">Revive the Tree</option>
             </select></label>
-            {world.settings.goal === "revive" && <label>Seeds needed<select value={world.settings.reviveSeedCount ?? ""}
-              onChange={(event) => onUpdateSetting("reviveSeedCount", event.target.value === "" ? null : Number(event.target.value))}>
-              <option value="">Unknown (identify seed value)</option>
-              {[1,2,3,4,5,6,7,8].map((count) => <option key={count} value={count}>{count}</option>)}
-            </select></label>}
           </div>
+          {world.settings.goal === "revive" && <p className="settings-hint">Resolve the required Mana Seed count directly at the Inventory counter. Unknown / Reset restores the imported requirement.</p>}
           <p className="settings-hint">Effective start: {effectiveStartingLocation(world.settings) === "kakkara" ? "Kakkara" : "Default"}.
             Kakkara requires Flammie Drum in logic. Open: deterministic routes; Shuffle/Chaos: enter known routes on the map.</p>
           <div className="slot-role-settings">{CHARACTERS.map((slot) => <label key={slot}>{slot} role

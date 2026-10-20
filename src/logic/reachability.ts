@@ -4,6 +4,7 @@ import type { InventoryId } from "../data/inventoryDefinitions";
 import type { MapArea } from "../data/mapAreas";
 import { ELEMENTS, WEAPON_FAMILIES, requirementAllowed, requirementId, type Element, type OrbId, type OrbRequirement } from "../domain/orbs";
 import { countManaSeeds } from "./inventory";
+import { revivalRequiredCount } from "../domain/revival";
 import { deriveEffectiveCheckState, type PersistentManualState, type RamState } from "../state/trackerState";
 import { CHARACTERS, effectiveRole, isRoleRandomized, type Character, type WorldState } from "../state/worldState";
 import { CHECK_REGION } from "../domain/cannons";
@@ -85,7 +86,7 @@ export function evaluateOrbGate(context: LogicContext, id: OrbId): OrbGateStatus
     ...WEAPON_FAMILIES.map((weapon) => ({ kind: "weapon-family" as const, weapon })),
   ];
   const possible = pool.filter((candidate) => requirementAllowed(context.world.settings.orbMode, candidate) &&
-    !context.world.gpNotNeeded.includes(requirementId(candidate)));
+    context.world.gpHints[requirementId(candidate)] !== "not-required");
   return possible.every((candidate) => evaluateRequirementGate(context, candidate) === "passable") ? "passable" : "unknown";
 }
 export function orbCompletion(context: LogicContext, id: OrbId): "manual" | "ram" | "none" {
@@ -127,8 +128,10 @@ function checkFunction(name: string, context: LogicContext): TruthValue {
   if (name === "canCrossUpperLandForest") return any([item(context, "flammie-drum"), checkFunction("canDestroyUFOrb", context)]);
   if (name === "grandPalaceBoss") return all([item(context, "weapon-whip"),
     ...([1, 2, 3, 4, 5, 6, 7] as const).map((number) => checkFunction(`canDestroyGPOrb${number}`, context))]);
-  if (name === "manaTreeRevive") return world.settings.reviveSeedCount === null ? "unknown" :
-    countManaSeeds(context.ram, context.manualItems) >= world.settings.reviveSeedCount;
+  if (name === "manaTreeRevive") {
+    const needed = revivalRequiredCount(world);
+    return needed === null ? "unknown" : countManaSeeds(context.ram, context.manualItems) >= needed;
+  }
   if (name === "hasManaFortressAccess") return all([world.settings.goal !== "revive", checkFunction("canCutStuff", context),
     item(context, "weapon-whip"), any([world.settings.goal === "short", checkFunction("grandPalaceBoss", context)])]);
   if (name === "hasManaTreeAccess") return all([checkFunction("canCutStuff", context),

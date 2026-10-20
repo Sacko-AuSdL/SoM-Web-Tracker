@@ -1,6 +1,16 @@
 import { readFileSync } from "node:fs";
 import { expect, it } from "vitest";
 
+it("keeps unknown GP knowledge visually quiet but discoverable on hover, keyboard focus and touch", () => {
+  const css = readFileSync("src/styles.css", "utf8");
+  expect(css).toMatch(/\.gp-badge\.unknown\s*\{\s*opacity: 0;/);
+  expect(css).toContain(".inventory-slot:hover .gp-badge.unknown");
+  expect(css).toContain(".inventory-slot:focus-within .gp-badge.unknown");
+  expect(css).toContain(".gp-badge.unknown:focus-visible");
+  expect(css).toContain("@media (hover: none), (pointer: coarse)");
+  expect(css).toContain(".revival-required:focus-within");
+});
+
 it("uses blank color-only checks and a compact original vector Cannon icon", () => {
   const css = readFileSync("src/styles.css", "utf8");
   expect(css.match(/\.map-pin \{([^}]+)\}/)[1]).toContain("padding: 0; display: grid; place-items: center;");

@@ -52,10 +52,20 @@
 .gp-badge { position: absolute; top: -2px; right: -2px; z-index: 3; padding: 0 2px; min-width: 18px; height: 13px;
   border: 1px solid #d8ba70; border-radius: 2px; background: #142838; color: #ffdc89; font: 9px/11px "Segoe UI", sans-serif; }
 .gp-badge.not-required { text-decoration: line-through; color: #aebbc5; border-color: #788a98; }
+.gp-badge.unknown { opacity: 0; background: transparent; border-color: transparent; color: #ffdc89; }
+.inventory-slot:hover .gp-badge.unknown, .inventory-slot:focus-within .gp-badge.unknown { opacity: .75; border-color: #788a98; background: #142838; }
+.gp-badge.unknown:focus-visible { opacity: 1; }
+@media (hover: none), (pointer: coarse) {
+  .gp-badge { min-width: 22px; min-height: 18px; }
+  .gp-badge.unknown { opacity: .55; }
+}
 .gp-badge:focus-visible { outline: 2px solid #fff4b8; }
 .inventory-compact .gp-badge { min-width: 16px; height: 12px; font-size: 8px; }
 .revival-count { margin: 2px 0 5px; color: #ffe0a0; font-size: 11px; white-space: nowrap; }
 .inventory-compact .revival-count { font-size: 10px; }
+.revival-required { display: inline-block; position: relative; min-width: 2ch; padding: 0 2px; border-bottom: 1px dotted #d8ba70; cursor: pointer; }
+.revival-required select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; padding: 0; cursor: pointer; }
+.revival-required:hover, .revival-required:focus-within { background: #38515a; outline: 1px solid #d8ba70; }
 .item-card { display: grid; place-items: center; position: relative; width: 100%; min-height: 42px; height: 42px;
   padding: 3px; background: #1d3041; border: 1px solid #3d5264; border-radius: 4px; }
 .inventory-slot.acquired .item-card { background: #24433f; border-color: #77c5a3; }

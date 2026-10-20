@@ -3,7 +3,8 @@ import { SANDSHIP } from "../data/sandship";
 import { CANNON_OFFICE_BY_ID, connectionId, validConnection, type CannonNodeId, type CannonConnection, type CannonTravelMode, type StartingLocation } from "../domain/cannons";
 import { PARTY_MODES, type PartyMode } from "../domain/characters";
 import { ELEMENTS, WEAPON_FAMILIES, GP_REQUIREMENT_IDS, requirementAllowed,
-  type CrystalOrbMode, type GpRequirementId, type OrbId, type OrbRequirement } from "../domain/orbs";
+  type CrystalOrbMode, type GpHintState, type GpRequirementId, type OrbId, type OrbRequirement } from "../domain/orbs";
+import { allowedRevivalCounts, validSeedCount, validSeedRange, type RevivalSeedRange } from "../domain/revival";
 
 export type Character = "boy" | "girl" | "sprite";
 export type Role = Character | "unknown";
@@ -20,6 +21,7 @@ export interface WorldSettings {
   fixedRoles: Partial<Record<Character, Character>>;
   goal: "short" | "long" | "revive";
   reviveSeedCount: number | null;
+  reviveSeedRange: RevivalSeedRange | null;
   orbMode: CrystalOrbMode;
   cannonMode: CannonTravelMode;
   startingLocation: StartingLocation;
@@ -36,8 +38,9 @@ export interface WorldState {
   orbs: Record<OrbId, OrbRequirement>;
   manualClearedOrbs: OrbId[];
   manualReadHints: string[];
-  // Seed configuration, not ownership or Orb completion. Unmarked = required.
-  gpNotNeeded: GpRequirementId[];
+  // Explicit seed hint knowledge; missing entries are UNKNOWN, not required.
+  gpHints: Partial<Record<GpRequirementId, Exclude<GpHintState, "unknown">>>;
+  manualReviveSeedCount: number | null;
   cannonConnections: CannonConnection[];
   closedCannonOffices: CannonNodeId[];
 }
@@ -48,11 +51,11 @@ const LEGACY_KEY = "som-web-tracker:world-state:v1";
 export function emptyWorldState(): WorldState {
   return {
     version: 3,
-    settings: { logic: "basic", drumLogic: "normal", roleMode: "normal", roleModeBySlot: {}, fixedRoles: {}, goal: "short", reviveSeedCount: 8, orbMode: "magic-only", cannonMode: "vanilla", startingLocation: "default", startingCharacter: "boy", resolvedStartingCharacter: null, partyMode: "find-both-level-1", additionalCharacter: null },
+    settings: { logic: "basic", drumLogic: "normal", roleMode: "normal", roleModeBySlot: {}, fixedRoles: {}, goal: "short", reviveSeedCount: 8, reviveSeedRange: null, orbMode: "magic-only", cannonMode: "vanilla", startingLocation: "default", startingCharacter: "boy", resolvedStartingCharacter: null, partyMode: "find-both-level-1", additionalCharacter: null },
     roles: { boy: "unknown", girl: "unknown", sprite: "unknown" },
     disabledCharacters: [],
     orbs: Object.fromEntries(ORB_SOURCE_DEFINITIONS.map((orb) => [orb.id, { kind: "unknown" }])) as Record<OrbId, OrbRequirement>,
-    manualClearedOrbs: [], manualReadHints: [], gpNotNeeded: [], cannonConnections: [], closedCannonOffices: [],
+    manualClearedOrbs: [], manualReadHints: [], gpHints: {}, manualReviveSeedCount: null, cannonConnections: [], closedCannonOffices: [],
   };
 }
 
@@ -67,8 +70,21 @@ export function setOrbCleared(state: WorldState, id: OrbId, cleared: boolean): W
   if (cleared) marks.add(id); else marks.delete(id);
   return { ...state, manualClearedOrbs: [...marks] };
 }
-export function toggleGpRequirement(state: WorldState, id: GpRequirementId): WorldState {
-  return { ...state, gpNotNeeded: state.gpNotNeeded.includes(id) ? state.gpNotNeeded.filter((value) => value !== id) : [...state.gpNotNeeded, id] };
+export function gpHintState(state: WorldState, id: GpRequirementId): GpHintState {
+  return state.gpHints[id] ?? "unknown";
+}
+export function setGpHint(state: WorldState, id: GpRequirementId, hint: GpHintState): WorldState {
+  const gpHints = { ...state.gpHints };
+  if (hint === "unknown") delete gpHints[id]; else gpHints[id] = hint;
+  return { ...state, gpHints };
+}
+export function cycleGpHint(state: WorldState, id: GpRequirementId): WorldState {
+  const hint = gpHintState(state, id);
+  return setGpHint(state, id, hint === "unknown" ? "required" : hint === "required" ? "not-required" : "unknown");
+}
+export function setReviveSeedResolution(state: WorldState, count: number | null): WorldState {
+  if (count !== null && !allowedRevivalCounts(state.settings).includes(count)) return state;
+  return { ...state, manualReviveSeedCount: count };
 }
 export function setHintRead(state: WorldState, id: string, read: boolean): WorldState {
   if (id !== SANDSHIP.hintId) return state;
@@ -127,7 +143,7 @@ function validRequirement(value: unknown, mode: CrystalOrbMode): value is OrbReq
 export function loadWorldState(storage: Storage): WorldState {
   const fallback = emptyWorldState();
   try {
-    const parsed = JSON.parse(storage.getItem(KEY) ?? storage.getItem(V2_KEY) ?? storage.getItem(LEGACY_KEY) ?? "null") as (Partial<Omit<WorldState, "version">> & { version?: number }) | null;
+    const parsed = JSON.parse(storage.getItem(KEY) ?? storage.getItem(V2_KEY) ?? storage.getItem(LEGACY_KEY) ?? "null") as (Partial<Omit<WorldState, "version">> & { version?: number; gpNotNeeded?: unknown }) | null;
     if (![1, 2, 3].includes(parsed?.version ?? 0) || !parsed?.settings) return fallback;
     const s = parsed.settings;
     const settings: WorldSettings = {
@@ -137,7 +153,8 @@ export function loadWorldState(storage: Storage): WorldState {
       roleModeBySlot: {},
       fixedRoles: {},
       goal: s.goal === "long" || s.goal === "revive" ? s.goal : "short",
-      reviveSeedCount: s.reviveSeedCount === null ? null : Number.isInteger(s.reviveSeedCount) && s.reviveSeedCount! >= 1 && s.reviveSeedCount! <= 8 ? s.reviveSeedCount! : 8,
+      reviveSeedCount: s.reviveSeedCount === null ? null : validSeedCount(s.reviveSeedCount) ? s.reviveSeedCount : 8,
+      reviveSeedRange: validSeedRange(s.reviveSeedRange) ? { min: s.reviveSeedRange.min, max: s.reviveSeedRange.max } : null,
       orbMode: s.orbMode === "mixed" || s.orbMode === "weapon-only" ? s.orbMode : "magic-only",
       cannonMode: s.cannonMode === "open" || s.cannonMode === "shuffle" || s.cannonMode === "chaos" ? s.cannonMode : "vanilla",
       startingLocation: s.startingLocation === "kakkara" ? "kakkara" : "default",
@@ -168,8 +185,19 @@ export function loadWorldState(storage: Storage): WorldState {
     const manualClearedOrbs = Array.isArray(parsed.manualClearedOrbs) ? [...new Set(parsed.manualClearedOrbs.filter(
       (id): id is OrbId => ORB_SOURCE_DEFINITIONS.some((orb) => orb.id === id)))] : [];
     const manualReadHints = Array.isArray(parsed.manualReadHints) && parsed.manualReadHints.includes(SANDSHIP.hintId) ? [SANDSHIP.hintId] : [];
-    const gpNotNeeded = Array.isArray(parsed.gpNotNeeded) ? [...new Set(parsed.gpNotNeeded.filter((id) => GP_REQUIREMENT_IDS.includes(id)))] : [];
-    let state: WorldState = { version: 3, settings, roles, disabledCharacters, orbs, manualClearedOrbs, manualReadHints, gpNotNeeded, cannonConnections: [], closedCannonOffices: [] };
+    const gpHints: WorldState["gpHints"] = {};
+    if (Object.hasOwn(parsed, "gpHints")) {
+      for (const id of GP_REQUIREMENT_IDS) {
+        const hint: unknown = parsed.gpHints?.[id];
+        // Legacy booleans carry no proof of an actual hint; never promote them.
+        if (hint === "required" || hint === "not-required") gpHints[id] = hint;
+      }
+    } else if (Array.isArray(parsed.gpNotNeeded)) {
+      // Old explicit exclusion entries are evidence; absence/default isn't.
+      for (const id of GP_REQUIREMENT_IDS) if (parsed.gpNotNeeded.includes(id)) gpHints[id] = "not-required";
+    }
+    const manualReviveSeedCount = validSeedCount(parsed.manualReviveSeedCount) && allowedRevivalCounts(settings).includes(parsed.manualReviveSeedCount) ? parsed.manualReviveSeedCount : null;
+    let state: WorldState = { version: 3, settings, roles, disabledCharacters, orbs, manualClearedOrbs, manualReadHints, gpHints, manualReviveSeedCount, cannonConnections: [], closedCannonOffices: [] };
     if (Array.isArray(parsed.cannonConnections)) for (const edge of parsed.cannonConnections) if (validConnection(edge)) state = addCannonConnection(state, edge);
     if (Array.isArray(parsed.closedCannonOffices)) state.closedCannonOffices = [...new Set(parsed.closedCannonOffices.filter((id) => CANNON_OFFICE_BY_ID.has(id)))];
     return state;

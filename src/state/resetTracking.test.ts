@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { emptyManualState, emptyRamState, loadManualState, saveManualState, setManualCompletion } from "./trackerState";
-import { addCannonConnection, emptyWorldState, loadWorldState, saveWorldState, toggleGpRequirement } from "./worldState";
+import { addCannonConnection, emptyWorldState, loadWorldState, saveWorldState, setGpHint } from "./worldState";
 import { resetTracking } from "./resetTracking";
 import type { InventoryId } from "../data/inventoryDefinitions";
 import { countManaSeeds } from "../logic/inventory";
@@ -15,13 +15,14 @@ function storage(): Storage {
 function fixture() {
   let world = addCannonConnection(emptyWorldState(), { from: "kakkara", to: "potos" });
   world.settings.orbMode = "mixed"; world.settings.goal = "revive"; world.settings.reviveSeedCount = 5;
+  world.manualReviveSeedCount = 4;
   world.settings.startingCharacter = "unresolved"; world.settings.resolvedStartingCharacter = "girl";
   world.settings.additionalCharacter = "boy"; world.roles.boy = "sprite"; world.disabledCharacters = ["sprite"];
   world.closedCannonOffices = ["matango"];
   for (const id of Object.keys(world.orbs) as (keyof typeof world.orbs)[]) world.orbs[id] = { kind: "weapon-family", weapon: "axe" };
   world.manualClearedOrbs = Object.keys(world.orbs) as (keyof typeof world.orbs)[];
   world.manualReadHints = ["sandship-morie-hint"];
-  world = toggleGpRequirement(world, "weapon-axe");
+  world = setGpHint(world, "weapon-axe", "not-required");
   return { world, manual: setManualCompletion(emptyManualState(), "potos-chest", true), manualItems: new Set<InventoryId>(["boy", "weapon-axe"]) };
 }
 describe("scoped manual tracking resets and additive persistence", () => {
@@ -29,7 +30,8 @@ describe("scoped manual tracking resets and additive persistence", () => {
     const before = fixture(), after = resetTracking("orbs", before);
     expect(Object.values(after.world.orbs)).toHaveLength(14);
     expect(Object.values(after.world.orbs).every((value) => value.kind === "unknown")).toBe(true);
-    expect(after.world.manualClearedOrbs).toEqual([]); expect(after.world.gpNotNeeded).toEqual([]);
+    expect(after.world.manualClearedOrbs).toEqual([]); expect(after.world.gpHints).toEqual({});
+    expect(after.world.manualReviveSeedCount).toBe(4);
     expect(after.manual).toBe(before.manual); expect(after.manualItems).toBe(before.manualItems);
     expect(after.world.settings).toBe(before.world.settings); expect(after.world.roles).toBe(before.world.roles);
     expect(after.world.cannonConnections).toEqual(before.world.cannonConnections);
@@ -58,18 +60,18 @@ describe("scoped manual tracking resets and additive persistence", () => {
   });
   it.each([1, 2, 3])("loads existing world version %s without GP data, and validates additive GP selections", (version) => {
     const store = storage(), state = emptyWorldState();
-    const { gpNotNeeded: _unused, ...old } = state;
+    const { gpHints: _unused, ...old } = state;
     store.setItem(`som-web-tracker:world-state:v${version}`, JSON.stringify({ ...old, version }));
-    expect(loadWorldState(store).gpNotNeeded).toEqual([]);
-    store.setItem("som-web-tracker:world-state:v3", JSON.stringify({ ...state, gpNotNeeded: ["weapon-axe", "weapon-axe", "bogus", null] }));
-    expect(loadWorldState(store).gpNotNeeded).toEqual(["weapon-axe"]);
+    expect(loadWorldState(store).gpHints).toEqual({});
+    store.setItem("som-web-tracker:world-state:v3", JSON.stringify({ ...old, gpNotNeeded: ["weapon-axe", "weapon-axe", "bogus", null] }));
+    expect(loadWorldState(store).gpHints).toEqual({ "weapon-axe": "not-required" });
   });
   it("persists GP exclusions and unknown Revival count independently from manual progress", () => {
-    const store = storage(), before = fixture(); before.world.settings.reviveSeedCount = null;
+    const store = storage(), before = fixture(); before.world.settings.reviveSeedCount = null; before.world.manualReviveSeedCount = null;
     saveWorldState(store, before.world);
     const loaded = loadWorldState(store);
-    expect(loaded.gpNotNeeded).toEqual(["weapon-axe"]); expect(loaded.settings.reviveSeedCount).toBeNull();
-    expect(resetTracking("manual", { ...before, world: loaded }).world.gpNotNeeded).toEqual(["weapon-axe"]);
+    expect(loaded.gpHints).toEqual({ "weapon-axe": "not-required" }); expect(loaded.settings.reviveSeedCount).toBeNull();
+    expect(resetTracking("manual", { ...before, world: loaded }).world.gpHints).toEqual({ "weapon-axe": "not-required" });
   });
   it("counts acquired seeds once from RAM plus manual inventory and follows rollback", () => {
     const ram = emptyRamState(); ram.inventory["seed-water"] = true; ram.inventory["seed-fire"] = true;

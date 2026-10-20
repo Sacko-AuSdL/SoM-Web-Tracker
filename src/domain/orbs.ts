@@ -8,6 +8,7 @@ export type CrystalOrbMode = "magic-only" | "mixed" | "weapon-only";
 export type OrbRequirement = { kind: "unknown" } | { kind: "element"; element: Element } | { kind: "weapon-family"; weapon: WeaponFamily };
 export type OrbId = typeof ORB_SOURCE_DEFINITIONS[number]["id"];
 export type GpRequirementId = `element-${Element}` | `weapon-${WeaponFamily}`;
+export type GpHintState = "unknown" | "required" | "not-required";
 export const GP_REQUIREMENT_IDS: readonly GpRequirementId[] = [
   ...ELEMENTS.map((element): GpRequirementId => `element-${element}`),
   ...WEAPON_FAMILIES.map((weapon): GpRequirementId => `weapon-${weapon}`),

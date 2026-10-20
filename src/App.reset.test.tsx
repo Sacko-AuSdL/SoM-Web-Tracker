@@ -26,7 +26,7 @@ beforeEach(() => {
   let world = addCannonConnection(emptyWorldState(), { from: "kakkara", to: "potos" });
   world.settings.orbMode = "mixed"; world.settings.goal = "revive"; world.settings.reviveSeedCount = 5;
   world.orbs.uf_orb = { kind: "weapon-family", weapon: "spear" }; world.manualClearedOrbs = ["uf_orb"];
-  world.manualReadHints = ["sandship-morie-hint"]; world.gpNotNeeded = ["element-gnome"]; world.roles.boy = "sprite";
+  world.manualReadHints = ["sandship-morie-hint"]; world.gpHints = { "element-gnome": "not-required" }; world.roles.boy = "sprite";
   saveWorldState(window.localStorage, world);
   saveManualState(window.localStorage, setManualCompletion(emptyManualState(), "potos-chest", true));
   window.localStorage.setItem("som-web-tracker-mini:manual-state:v2", JSON.stringify({ completedChecks: { potosChest: true } }));
@@ -86,7 +86,7 @@ it.each(["attached", "disconnected"] as const)("Crystal Orb reset %s retains RAM
   confirm(openReset("Reset Crystal Orbs")); closeSettings();
   const after = loadWorldState(window.localStorage);
   expect(Object.values(after.orbs)).toHaveLength(14); expect(Object.values(after.orbs).every((value) => value.kind === "unknown")).toBe(true);
-  expect(after.gpNotNeeded).toEqual([]); expect(after.manualClearedOrbs).toEqual([]);
+  expect(after.gpHints).toEqual({}); expect(after.manualClearedOrbs).toEqual([]);
   expect(after.settings).toEqual(before.settings); expect(after.cannonConnections).toEqual(before.cannonConnections);
   expect(after.roles).toEqual(before.roles); expect(after.manualReadHints).toEqual(before.manualReadHints);
   expect(loadManualState(window.localStorage).manualCompletedChecks).toEqual(["potos-chest"]);
@@ -105,4 +105,30 @@ it.each(["attached", "disconnected"] as const)("New Seed Reset %s clears options
   expect(loadUiPreferences(window.localStorage)).toEqual(ui); expect(feed.snapshot!.ram).toEqual(beforeRam);
   expect(window.localStorage.getItem("connection-preferences")).toBe("preserve-connection");
   expect(screen.queryByText(/^Mana Seeds:/)).toBeNull();
+});
+
+it("persists inline MTR resolution and all GP knowledge states through actual App reload and the three reset scopes", () => {
+  const mounted = render(<App />);
+  fireEvent.change(screen.getByRole("combobox", { name: "Required Mana Seeds" }), { target: { value: "6" } });
+  expect(loadWorldState(window.localStorage).manualReviveSeedCount).toBe(6);
+  expect(loadWorldState(window.localStorage).settings.reviveSeedCount).toBe(5);
+  fireEvent.click(screen.getByRole("button", { name: "Gnome: not required for Grand Palace" }));
+  const unknown = screen.getByRole("button", { name: "Undine: Grand Palace hint unknown" });
+  expect(unknown.tagName).toBe("BUTTON"); expect(unknown.tabIndex).toBe(0);
+  fireEvent.focus(unknown); fireEvent.click(unknown);
+  expect(loadWorldState(window.localStorage).gpHints).toEqual({ "element-undine": "required" });
+  mounted.unmount(); render(<App />);
+  expect((screen.getByRole("combobox", { name: "Required Mana Seeds" }) as HTMLSelectElement).value).toBe("6");
+  expect(screen.getByRole("button", { name: "Undine: required for Grand Palace" })).toBeDefined();
+  expect(screen.getByRole("button", { name: "Gnome: Grand Palace hint unknown" })).toBeDefined();
+  confirm(openReset("Reset Manual Tracking")); closeSettings();
+  expect(loadWorldState(window.localStorage).manualReviveSeedCount).toBe(6);
+  expect(loadWorldState(window.localStorage).gpHints).toEqual({ "element-undine": "required" });
+  confirm(openReset("Reset Crystal Orbs")); closeSettings();
+  expect(loadWorldState(window.localStorage).gpHints).toEqual({});
+  expect(loadWorldState(window.localStorage).manualReviveSeedCount).toBe(6);
+  confirm(openReset("New Seed Reset")); closeSettings();
+  expect(loadWorldState(window.localStorage).manualReviveSeedCount).toBeNull();
+  expect(loadWorldState(window.localStorage).gpHints).toEqual({});
+  expect(screen.queryByRole("combobox", { name: "Required Mana Seeds" })).toBeNull();
 });

@@ -17,7 +17,7 @@ import { SettingsPanel } from "./ui/SettingsPanel";
 import { WorldMap } from "./ui/WorldMap";
 import { emptyWorldState, loadWorldState, saveWorldState, setOrbMode, setOrbRequirement, setRoleIdentity, setOrbCleared, setHintRead,
   addCannonConnection, removeCannonConnection, replaceCannonConnection, clearCannonConnections, setCannonOfficeClosed,
-  toggleGpRequirement, type Character, type Role, type WorldSettings, type WorldState } from "./state/worldState";
+  cycleGpHint, setReviveSeedResolution, type Character, type Role, type WorldSettings, type WorldState } from "./state/worldState";
 import { resetTracking, type ResetScope } from "./state/resetTracking";
 import { loadUiPreferences, saveUiPreferences, type DungeonMode, type InventoryMode } from "./state/uiPreferences";
 import { applyRandomizerSettings } from "./adapters/randomizerSettings";
@@ -119,7 +119,8 @@ export default function App() {
         <ItemPanel ram={snapshot.ram} manualItems={manualItems} world={world} mode={ui.inventoryMode}
           onSetMode={(mode: InventoryMode) => setUi((current) => ({ ...current, inventoryMode: mode }))}
           onToggleManualItem={toggleManualItem} onSetRole={setRole}
-          onToggleGp={(id) => setWorld((current) => toggleGpRequirement(current, id))} />
+          onToggleGp={(id) => setWorld((current) => cycleGpHint(current, id))}
+          onResolveRevival={(count) => setWorld((current) => setReviveSeedResolution(current, count))} />
         <div className={`map-surfaces${dungeon ? " with-dungeon" : ""}`}>
           <WorldMap ram={snapshot.ram} manual={manual} manualItems={manualItems} world={world}
             onToggleManualCheck={toggleManualCheck} onSelectOrb={selectOrb}

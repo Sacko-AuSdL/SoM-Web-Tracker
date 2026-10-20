@@ -10,7 +10,7 @@ export interface ManualTrackingData {
 // The normal versioned writers persist empty current records, masking legacy data.
 export function resetTracking(scope: ResetScope, data: ManualTrackingData): ManualTrackingData {
   if (scope === "orbs") return { ...data, world: { ...data.world,
-    orbs: emptyWorldState().orbs, manualClearedOrbs: [], gpNotNeeded: [] } };
+    orbs: emptyWorldState().orbs, manualClearedOrbs: [], gpHints: {} } };
   return { manual: emptyManualState(), manualItems: new Set(), world: scope === "seed" ? emptyWorldState() :
     { ...data.world, manualClearedOrbs: [], manualReadHints: [] } };
 }
