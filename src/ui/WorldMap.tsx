@@ -9,7 +9,7 @@ import { LOCATION_BY_ID, type LocationId } from "../data/locationDefinitions";
 import type { InventoryId } from "../data/inventoryDefinitions";
 import { requirementLabel, type OrbId, type OrbRequirement } from "../domain/orbs";
 import { OrbRequirementPicker } from "./OrbRequirementPicker";
-import { createLogicContext, evaluateArea, evaluateCheck, evaluateOrbGate, orbCompletion } from "../logic/reachability";
+import { createLogicContext, evaluateArea, evaluateCheck, evaluateOrbGate, evaluateOrbTraversal, orbCompletion } from "../logic/reachability";
 import { deriveEffectiveCheckState, isManuallyCompleted, type RamState, type PersistentManualState } from "../state/trackerState";
 import type { WorldState } from "../state/worldState";
 import { orbImage, orbRequirementImage, overworldImage } from "./assets";
@@ -132,7 +132,12 @@ export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck,
         <button type="button" onClick={() => zoomAt(1.25, { x: size.width / 2, y: size.height / 2 })} aria-label="Zoom in">+</button>
         <button type="button" onClick={() => zoomAt(1 / 1.25, { x: size.width / 2, y: size.height / 2 })} aria-label="Zoom out">−</button>
         <button type="button" onClick={() => setView(clampView({ scale: fitScale(size), x: 0, y: 0 }, size))}>Fit</button>
+        <details className="map-help">
+          <summary aria-label="Map help" title="Map help">?</summary>
+          <div>Drag · scroll to zoom · hover or click a marker<br />{areas.length} areas · {ORB_SOURCE_DEFINITIONS.length} orbs</div>
+        </details>
       </div>
+      <div className="map-context" ref={setCannonFooter} />
     </div>
     <div className="map-viewport" ref={viewportRef} onWheel={onWheel}
       onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
@@ -185,13 +190,17 @@ export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck,
           orb.id === "uf_orb" ? UPPER_LAND_ORB_POSITION.y : orb.y, offset.x, offset.y);
         const requirement = world.orbs[orb.id];
         const gate = evaluateOrbGate(context, orb.id);
+        // Display the actual gate state, not a hypothetical casting requirement
+        // after the Orb has already been removed. Travel/seed gates still apply
+        // independently to the area's location checks.
+        const traversal = evaluateOrbTraversal(context, orb.id);
         const completion = orbCompletion(context, orb.id);
         const completionLabel = completion !== "none" ? `Cleared/open (${completion})` : ram.orbs[orb.id] === null ? "Completion unavailable" : "Not cleared";
         return <div key={orb.id} inert={cannonEditActive} className={`map-anchor orb-anchor${isOpen("orbs", orb.id) ? " open" : ""}`}
           style={coords} {...markerHandlers("orbs", orb.id)}>
-          <button type="button" className={`orb-pin orb-${gate}${completion !== "none" ? " orb-cleared" : ""}`} onClick={() => togglePin("orbs", orb.id)}
-            aria-label={`${orb.name}: ${requirementLabel(requirement)}, ${gate}${completion !== "none" ? `, cleared (${completion})` : ""}`} aria-expanded={isOpen("orbs", orb.id)}
-            title={`${orb.name}: ${requirementLabel(requirement)} · requirement ${gate} · ${completionLabel}`}>
+          <button type="button" className={`orb-pin orb-${traversal}${completion !== "none" ? " orb-cleared" : ""}`} onClick={() => togglePin("orbs", orb.id)}
+            aria-label={`${orb.name}: ${requirementLabel(requirement)}, ${traversal}${completion !== "none" ? `, cleared (${completion})` : ""}`} aria-expanded={isOpen("orbs", orb.id)}
+            title={`${orb.name}: ${requirementLabel(requirement)} · traversal ${traversal} · requirement ${gate} · ${completionLabel}`}>
             <span className="orb-sprite"><img src={orbImage} alt="" />
               {requirement.kind === "unknown" && <span className="orb-uncertainty" aria-hidden="true">?</span>}</span>
             {requirement.kind !== "unknown" && <img className="orb-requirement" src={orbRequirementImage(requirement)!} alt={requirementLabel(requirement)} />}
@@ -199,7 +208,7 @@ export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck,
           </button>
           {isOpen("orbs", orb.id) && <div className="map-popover orb-popover" style={popupStyle(coords.left, coords.top)}>
             <button type="button" className="popover-close" aria-label="Close popup" onClick={() => { setPinned(null); setHovered(null); }}>×</button>
-            <h3>{orb.name}</h3><p className="popover-summary">Requirement: {gate} · {completionLabel}</p>
+            <h3>{orb.name}</h3><p className="popover-summary">Traversal: {traversal} · Requirement: {gate} · {completionLabel}</p>
             <button type="button" className="orb-manual-clear" aria-pressed={world.manualClearedOrbs.includes(orb.id)}
               onClick={() => onSetOrbCleared?.(orb.id, !world.manualClearedOrbs.includes(orb.id))}>
               {world.manualClearedOrbs.includes(orb.id) ? "Undo manual cleared mark" : "Mark Orb cleared manually"}</button>
@@ -242,6 +251,5 @@ export function WorldMap({ ram, manual, manualItems, world, onToggleManualCheck,
         </div>;
       })}
     </div>
-    <div className="map-footnote"><div ref={setCannonFooter} /><span>Drag · scroll to zoom · hover or click a marker</span><span>{areas.length} areas · {ORB_SOURCE_DEFINITIONS.length} orbs</span></div>
   </section>;
 }

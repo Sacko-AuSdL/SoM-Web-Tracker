@@ -157,6 +157,63 @@ function waitForTrackerSnapshot(
 }
 
 describe("SniClient usb2snes flow", () => {
+  it("rehydrates Pandora Girl from the reported $E17420/$E151C8/$CFAF trace on a fresh tracker, not browser persistence", async () => {
+    vi.stubGlobal("WebSocket", MockWebSocket);
+    mockMemory.set(0x01e7a3, new Uint8Array([0x20,0x74,0xe1]));
+    mockMemory.set(0x217420 + 0x188 * 3, new Uint8Array([0xc8,0x51,0xe1]));
+    mockMemory.set(0x2151c8, new Uint8Array([0x50,0x42,0xaf,0x1f,0x13,0x96,0x39,0x02,0xcf,0x38,0x39,0x03,0xcf,0x07,0x30,0xaf,0x01,0x28,0x00,0x51,0x00]));
+    mockMemory.set(0xf5cfaf, new Uint8Array([1]));
+    for (let reload = 0; reload < 2; reload++) {
+      const tracker = new PotosAutotracker("ws://mock-sni:23074"); tracker.start();
+      try {
+        const restored = await waitForTrackerSnapshot(tracker, s => s.gameDetected && s.ram.checks["pandora-castle-girl"] === true);
+        expect(restored.locations["pandora-castle-girl"].events[0]).toMatchObject({
+          eventPointerTable: 0xe17420, eventPointer: 0xe151c8,
+          strategy: { kind: "flag", flagAddress: 0x7ecfaf }, flagValue: 1, error: null,
+        });
+        mockMemory.set(0xf5cfaf, new Uint8Array([0]));
+        await waitForTrackerSnapshot(tracker, s => s.gameDetected && s.ram.checks["pandora-castle-girl"] === false);
+        mockMemory.set(0xf5cfaf, new Uint8Array([1]));
+        await waitForTrackerSnapshot(tracker, s => s.gameDetected && s.ram.checks["pandora-castle-girl"] === true);
+      } finally { tracker.stop(); }
+    }
+  }, 10000);
+
+  it.each([
+    // PrizeEvents.cs $188 injects one randomized prize, not the vanilla $13
+    // story flag or physical party bit. OpenWorldPrizes.cs prize shapes:
+    ["weapon", 0xc8, [0x1e,0x80,0x29,0xc0,0x29,0xc8]],
+    ["weapon orb", 0x06, [0x29,0x06,0x42,0xba,0x08,0x29,0xba,0x42,0xc2,0x08,0x29,0xc2]],
+    ["magic", 0xa8, [0x39,0x02,0xc8,0x38,0x39,0x03,0xc8,0x07,0x30,0xa8,0x01]],
+    ["seed", 0x96, [0x30,0x96,0x01,0x25,0x94]],
+    ["gold", 0x77, [0x36,0x90,0x01,0xa8,0x89,0x83,0x85,0x80,0x29,0x77]],
+    ["character reward", 0x0e, [0x51,0x1f,0x02,0x29,0x0e,0x29,0xc9,0x2b,0x02]],
+  ] as const)("Pandora Girl $188 dynamically follows its %s prize flag through collection, rollback and reattachment", async (_name, flag, body) => {
+    vi.stubGlobal("WebSocket", MockWebSocket);
+    mockMemory.set(0x216b53 + 0x188 * 3, new Uint8Array([0x00,0x50,0xe1]));
+    mockMemory.set(0x215000, new Uint8Array([0x50,0x42,flag,0x1f,0x13,0x96,...body,0x28,0x00,0x51,0x00]));
+    mockMemory.set(0xf5cf00 + flag, new Uint8Array([0]));
+    mockMemory.set(0xf5cf13, new Uint8Array([7])); // pre-set by InitialEventFlagStates.cs
+    mockMemory.set(0xf500d9, new Uint8Array([2])); // Girl present is unrelated
+    const definitions = LOCATION_DEFINITIONS.filter(check => check.id === "pandora-castle-girl");
+    expect(definitions[0].events).toEqual([{ eventNumber: 0x188 }]);
+    const client = new SniClient("ws://mock-sni:23074"); client.start();
+    try {
+      await waitForAttached(client);
+      const tracker = new LocationAutotracker(client, definitions);
+      expect((await tracker.poll()).checks["pandora-castle-girl"]).toBe(false);
+      mockMemory.set(0xf5cf00 + flag, new Uint8Array([1]));
+      const claimed = await tracker.poll();
+      expect(claimed.checks["pandora-castle-girl"]).toBe(true);
+      expect(claimed.diagnostics["pandora-castle-girl"].events[0]).toMatchObject({
+        eventNumber: 0x188, strategy: { kind: "flag", flagAddress: 0x7ecf00 + flag }, error: null,
+      });
+      mockMemory.set(0xf5cf00 + flag, new Uint8Array([0]));
+      expect((await tracker.poll()).checks["pandora-castle-girl"]).toBe(false);
+      expect((await new LocationAutotracker(client, definitions).poll()).checks["pandora-castle-girl"]).toBe(false);
+    } finally { client.stop(); }
+  });
+
   it("tracks Girl's native physical membership with zero reward flags through rollback and socket reconnect", async () => {
     vi.stubGlobal("WebSocket", MockWebSocket);
     mockMemory.set(0xf5cf0c, new Uint8Array([0,0,0]));

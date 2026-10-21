@@ -194,3 +194,88 @@ Retest with the exact live string and the already completed save:
 - GitHub Pages workflow/base path, SNI protocol, event/check IDs, all 14 Orb
   mappings, Sandship 76/77 compatibility, license notices and game assets were
   left unchanged. No push or release tag is part of this pass.
+
+## Follow-up live/display verification — 2026-10-21
+
+This section supersedes the earlier interpretation of the Girl report: the
+reported entity is `pandora-castle-girl`, not physical party membership. The
+existing party/role code is unchanged by this follow-up.
+
+### Pandora Girl: verified rather than speculatively rewritten
+
+The source mapping remains event `$188`. `PrizeEvents.cs` injects one randomized
+prize; `OpenWorldPrizes.cs` supplies that prize's persistent acquisition flag.
+The vanilla Pandora story flag `$13` (initialized to 7) and Girl's party bit
+are not this location's completion conditions.
+
+The user supplied, then confirmed again after reload:
+
+- Pointer table `$E17420`, event pointer `$E151C8`.
+- Resolved prize flag `$7ECFAF >= 1`, current value `$01`.
+- Location completion true, no error.
+
+The local production preview subsequently attached to a real SNI Lua Bridge /
+Snes9x device. Debug showed exactly this trace. After reloading and waiting for
+Game Detected, the Pandora Girl row restored as RAM-complete with no manual
+mark; the Pandora area showed `1 of 8 complete`. Its other seven checks are
+independent, so the whole area is not grey yet. Before attachment/game detection,
+RAM data is temporarily unavailable; automatic completion is intentionally not
+cached as permanent browser progress.
+
+No Pandora event, flag, resolver, party or persistence implementation change
+was warranted. Added six socket cases for different dynamic prize types and
+one full fresh-Autotracker test using the supplied pointer/flag combination,
+including RAM rollback and reacquisition. A UI regression covers remounting and
+the distinction between one completed row and the grouped area marker.
+
+### Moon: display the current gate, not its former casting requirement
+
+The World Map used `evaluateOrbGate` for the Orb's class/accessibility label.
+That evaluates item/spell capability, even after an Orb is removed. Location
+reachability already used `evaluateOrbTraversal`, which correctly honors RAM
+or manual clearance. This could produce contradictory `blocked, cleared`
+marker metadata and a blocked requirement summary for an open route.
+
+Markers now use the existing traversal result. Open Orbs have the completed
+grey treatment and no blocked class; the popup explicitly separates traversal,
+casting requirement, and completion. No RAM mapping or gate was loosened.
+Flammie-only travel and Restrictive Moon Seed still independently gate the
+Moon reward check, and Orb clearance never collects the reward.
+
+DOM regressions cover missing magic + Flammie + Moon Seed + RAM-cleared Orb,
+reward collection, RAM rollback, manual clearance, and both genuine missing
+access requirements. The built browser app also passed a manual-UI simulation
+of this combination; those temporary QA marks were undone. The real emulator
+state observed during this pass lacked Drum/Moon Seed and did not have a
+cleared Moon Orb, so the exact fully-cleared combination was not verified live
+in the emulator. Do not mistake the manual-UI simulation for a live RAM test.
+
+### Broadcast and map help
+
+- A small `N/C/S · Esc to return` hint sits immediately below the icons and is
+  clickable/touchable to return to Normal. N/C/S/Escape shortcuts remain intact.
+- HTML, body, root and inventory surfaces use black in Broadcast; no map,
+  footer, map help or Cannon status is rendered. Icons and overlays are retained.
+- The 270×168 icon panel plus hint fits 280×180 without scrolling. All checked
+  page/container backgrounds compute to black; unpainted children inherit it.
+- Removed the permanent map-bottom help strip. Instructions/counts live in a
+  default-collapsed `?` beside Fit. Existing Cannon guidance is portaled into
+  the map header only when its manual route layer is enabled. Route editing,
+  cancellation and the network logic are unchanged.
+
+### Verification and evidence boundary
+
+- **474 tests / 39 files passed**, using `npm test -- --maxWorkers=2 --pool=threads`.
+  A preliminary focused run hit the known Windows worker-startup timeout;
+  subsequent full runs passed without changing test configuration.
+- TypeScript, production build (95 modules), and production base-path check
+  (34 asset references) passed. Normal, Compact, Square and Broadcast were
+  visually checked against the local production build. No captured browser
+  warnings/errors; loaded image checks found no broken assets.
+- Real SNI/Snes9x attachment, polling and Pandora completion after browser
+  reload were observed. No emulator memory was written; real save-state rollback
+  was not performed by the agent. Socket regressions cover rollback.
+- Local screenshots: ignored `tmp/verification/final-live-*.jpg`,
+  `final-broadcast-280x180.jpg` and `final-moon-open-manual.jpg`.
+- No deployment, push, release tag, asset replacement, gameplay additions or
+  persistence migration changes are part of this follow-up.

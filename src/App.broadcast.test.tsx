@@ -26,17 +26,30 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); window.history.replaceState(null, "", "/"); });
 
-it("broadcast URL renders only the shared inventory categories/icons, without capture chrome", () => {
+it("broadcast URL renders shared icons and a minimal exit hint, without map/status chrome", () => {
   window.history.replaceState(null, "", "/SoM-Web-Tracker/?view=broadcast"); render(<App />);
   expect(screen.getAllByRole("region")).toHaveLength(5);
   for (const name of ["Characters","Elements","Weapons","Key items","Mana seeds"]) expect(screen.getByRole("region", { name })).toBeDefined();
   expect(screen.queryByRole("banner")).toBeNull(); expect(screen.queryByRole("contentinfo")).toBeNull();
   expect(screen.queryByRole("region", { name: "World map" })).toBeNull(); expect(screen.queryAllByRole("heading")).toHaveLength(0);
-  expect(screen.getAllByRole("button")).toHaveLength(32); expect(document.querySelectorAll(".item-panel")).toHaveLength(1);
+  expect(document.querySelectorAll(".item-card")).toHaveLength(32); expect(document.querySelectorAll(".item-panel")).toHaveLength(1);
+  expect(screen.getByRole("button", { name: "Exit Broadcast to Normal inventory" }).textContent).toBe("N/C/S · Esc to return");
+  expect(document.querySelector(".map-footnote,.map-help,.map-context,.cannon-status")).toBeNull();
   expect(document.querySelectorAll(".gp-badge,.availability-badge,.manual-indicator,.panel-note,.revival-count")).toHaveLength(0);
   expect(screen.getByRole("button", { name: /Girl slot: present/ }).closest(".inventory-slot")?.classList.contains("acquired")).toBe(true);
   expect(screen.getByRole("button", { name: /Spear: not acquired/ }).querySelector(".weapon-stage")?.textContent).toBe("3");
   expect(loadUiPreferences(window.localStorage).inventoryMode).toBe("broadcast");
+});
+it("returns from Broadcast by the visible hint or N, restoring the unchanged map layouts", () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole("button", { name: "Broadcast inventory" }));
+  fireEvent.click(screen.getByRole("button", { name: "Exit Broadcast to Normal inventory" }));
+  expect(loadUiPreferences(window.localStorage).inventoryMode).toBe("normal");
+  expect(screen.queryByText("N/C/S · Esc to return")).toBeNull();
+  expect(screen.getByRole("region", { name: "World map" })).toBeDefined();
+  fireEvent.click(screen.getByRole("button", { name: "Broadcast inventory" }));
+  fireEvent.keyDown(window, { key: "n" });
+  expect(loadUiPreferences(window.localStorage).inventoryMode).toBe("normal");
 });
 it("one live snapshot and the same manual state update Broadcast immediately, then survive layout switching", () => {
   window.history.replaceState(null, "", "/?view=broadcast"); render(<App />);
@@ -67,6 +80,22 @@ it("uses canonical presentation without changing the native RAM binding or stabl
   expect(names("Weapons")).toEqual(["Sword","Spear","Gloves","Boomerang","Bow","Axe","Whip","Javelin"]);
   fireEvent.click(screen.getByRole("button", { name: "Broadcast inventory" }));
   expect(names("Weapons")).toEqual(["Sword","Spear","Gloves","Boomerang","Bow","Axe","Whip","Javelin"]);
+});
+it("restores the Pandora Girl row from fresh RAM after reload, without greying its seven unfinished siblings", () => {
+  vi.stubGlobal("ResizeObserver", class {
+    constructor(private callback: ResizeObserverCallback) {}
+    observe() { this.callback([{ contentRect: { width: 900, height: 700 } } as ResizeObserverEntry], this as unknown as ResizeObserver); }
+    disconnect() {}
+  });
+  feed.snapshot!.ram.checks["pandora-castle-girl"] = true;
+  for (let reload = 0; reload < 2; reload++) {
+    const app = render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: /^Pandora:/ }));
+    expect(screen.getByRole("button", { name: "Pandora Castle Girl" }).classList.contains("complete")).toBe(true);
+    expect(screen.getByRole("button", { name: /^Pandora:/ }).getAttribute("aria-label")).toContain("1 of 8 complete");
+    expect(screen.getByRole("button", { name: /^Pandora:/ }).classList.contains("pin-completed")).toBe(false);
+    app.unmount();
+  }
 });
 it("edits the exact live MTR range in the existing compact dropdown without changing acquired seeds", () => {
   render(<App />);

@@ -24,6 +24,8 @@ installation of the tracker.** No ROM, emulator or SNI installation is bundled.
 3. Choose **N / C / S / B** for your preferred inventory layout. Drag/zoom the map;
    hover or click a marker for details. Green is reachable, red blocked,
    amber unknown/partial, and grey completed.
+   Map instructions are tucked into **?** beside Fit; Cannon guidance appears
+   in the map header only when its manual route layer is enabled.
 4. Click a Crystal Orb to record its known requirement. Orb requirements and
    completion are separate. Enable Cannons to record directed Shuffle/Chaos routes.
 5. Use an item's GP corner to cycle **Unknown → Required → Not Required**.
@@ -37,12 +39,13 @@ installation of the tracker.** No ROM, emulator or SNI installation is bundled.
 ### Broadcast / OBS
 
 Choose **B**, or open the tracker with **`?view=broadcast`** appended to its URL.
-Broadcast shows only the same inventory icons on pure black—no map, panels,
+Broadcast shows the same inventory icons on pure black—no map, panels,
 headings, check counters or layout buttons. Missing items stay dimmed; role
 overlays and weapon Orb stages remain meaningful. A **280 × 180** browser source
 fits the compact five-row inventory; larger frames simply add black space.
 
-Focus the page (OBS: **Interact**) and press **N**, **C**, **S** or **Escape** to
+The small hint below the icons is clickable to return to Normal. Alternatively,
+focus the page (OBS: **Interact**) and press **N**, **C**, **S** or **Escape** to
 return. Layout choice persists. Use Normal/Compact/Square for settings, GP hints
 and the MTR dropdown before switching to Broadcast.
 

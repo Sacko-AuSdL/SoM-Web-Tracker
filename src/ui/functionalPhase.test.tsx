@@ -47,7 +47,9 @@ describe("Orb inventory icon adapter", () => {
     expect(orb.className).toContain("orb-cleared");
     expect(orb.textContent).toBe("✓");
     ram.inventory["weapon-axe"] = false; rerender(<Harness />);
-    expect(orb.getAttribute("aria-label")).toContain("blocked, cleared (manual)");
+    expect(orb.getAttribute("aria-label")).toContain("passable, cleared (manual)");
+    expect(orb.className).not.toContain("orb-blocked");
+    expect(orb.title).toContain("requirement blocked");
     fireEvent.click(screen.getByRole("button", { name: "Undo manual cleared mark" }));
     expect(orb.className).not.toContain("orb-cleared");
     ram.orbs.uf_orb = true; rerender(<Harness />);
@@ -118,7 +120,8 @@ describe("directed Cannon map editing", () => {
     expect(document.querySelector(".orb-anchor")?.hasAttribute("inert")).toBe(true);
     expect(document.querySelector(".cannon-anchor")?.hasAttribute("inert")).toBe(false);
     expect(document.querySelector(".map-viewport .cannon-status")).toBeNull();
-    expect(document.querySelector(".map-footnote .cannon-status")).not.toBeNull();
+    expect(document.querySelector(".map-heading .map-context .cannon-status")).not.toBeNull();
+    expect(document.querySelector(".map-footnote")).toBeNull();
     fireEvent.keyDown(window, { key: "Escape" });
     expect(document.querySelector(".orb-anchor")?.hasAttribute("inert")).toBe(false);
   });

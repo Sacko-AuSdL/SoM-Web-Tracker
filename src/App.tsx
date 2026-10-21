@@ -154,6 +154,10 @@ export default function App() {
         </div>}
       </div>
 
+      {ui.inventoryMode === "broadcast" && <button type="button" className="broadcast-exit"
+        aria-label="Exit Broadcast to Normal inventory" title="Return: N Normal · C Compact · S Square · Escape Normal"
+        onClick={() => setInventoryMode("normal")}>N/C/S · Esc to return</button>}
+
       {ui.inventoryMode !== "broadcast" && <footer className="footerbar">
         <div><button type="button" onClick={() => setSettingsOpen(true)}>Settings</button>
           <button type="button" onClick={() => setDebugOpen((open) => !open)} aria-expanded={debugOpen}>Debug</button></div>

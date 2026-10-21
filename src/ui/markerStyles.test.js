@@ -4,6 +4,8 @@ import { expect, it } from "vitest";
 it("Broadcast is pure black and borderless, compactly shares the same icons without capture controls", () => {
   const css = readFileSync("src/styles.css", "utf8");
   expect(css).toContain("body:has(.inventory-broadcast) { background: #000000; min-width: 0; overflow: hidden; }");
+  expect(css).toContain("html:has(.inventory-broadcast), #root:has(.inventory-broadcast) { background: #000000; }");
+  expect(css).toMatch(/\.broadcast-exit \{[^}]+background: #000000;/);
   expect(css).toContain("width: min(270px, 100vw)");
   expect(css).toContain(".inventory-broadcast .item-card");
   expect(css).toContain("border: 0; border-radius: 0; padding: 0; background: #000000;");
