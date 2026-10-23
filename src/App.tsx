@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Autotracker, type AutotrackerSnapshot } from "./autotracking/Autotracker";
-import type { InventoryId } from "./data/inventoryDefinitions";
 import type { LocationId } from "./data/locationDefinitions";
 import type { CrystalOrbMode, OrbId, OrbRequirement } from "./domain/orbs";
 import { activeDungeon } from "./data/dungeons";
@@ -8,7 +7,7 @@ import { countTrackerProgress } from "./logic/progress";
 import { createLogicContext } from "./logic/reachability";
 import {
   isManuallyCompleted, loadManualState, saveManualState, setManualCompletion,
-  type PersistentManualState,
+  type PersistentManualState, MANUAL_STORAGE_KEY,
 } from "./state/trackerState";
 import { DebugPanel } from "./ui/DebugPanel";
 import { DungeonMapPanel } from "./ui/DungeonMapPanel";
@@ -17,9 +16,10 @@ import { SettingsPanel } from "./ui/SettingsPanel";
 import { WorldMap } from "./ui/WorldMap";
 import { emptyWorldState, loadWorldState, saveWorldState, setOrbMode, setOrbRequirement, setRoleIdentity, setOrbCleared, setHintRead,
   addCannonConnection, removeCannonConnection, replaceCannonConnection, clearCannonConnections, setCannonOfficeClosed,
-  cycleGpHint, setReviveSeedResolution, type Character, type Role, type WorldSettings, type WorldState } from "./state/worldState";
+  cycleGpHint, setReviveSeedResolution, WORLD_STORAGE_KEY, type Character, type Role, type WorldSettings, type WorldState } from "./state/worldState";
 import { resetTracking, type ResetScope } from "./state/resetTracking";
-import { loadUiPreferences, saveUiPreferences, type DungeonMode, type InventoryMode } from "./state/uiPreferences";
+import { isInventoryMode, loadUiPreferences, saveUiPreferences, loadPopoutInventoryMode, savePopoutInventoryMode, type DungeonMode, type InventoryMode, type PresentationMode } from "./state/uiPreferences";
+import { useManualInventorySession } from "./state/useManualInventorySession";
 import { applyRandomizerSettings } from "./adapters/randomizerSettings";
 import type { CannonAction } from "./ui/CannonLayer";
 
@@ -27,35 +27,61 @@ const endpoint = import.meta.env.VITE_SNI_ENDPOINT || "ws://localhost:23074";
 const autotracker = new Autotracker(endpoint);
 
 export default function App() {
+  const [popout] = useState(() => new URLSearchParams(window.location.search).get("view") === "inventory-popout");
   const [snapshot, setSnapshot] = useState<AutotrackerSnapshot>(() => autotracker.getSnapshot());
   const [manual, setManual] = useState<PersistentManualState>(() => loadManualState(window.localStorage));
-  const [manualItems, setManualItems] = useState<ReadonlySet<InventoryId>>(() => new Set());
+  const [manualItems, toggleManualItem, clearManualItems] = useManualInventorySession();
   const [world, setWorld] = useState<WorldState>(() => typeof window === "undefined" ? emptyWorldState() : loadWorldState(window.localStorage));
   const [ui, setUi] = useState(() => {
     const preferences = loadUiPreferences(window.localStorage);
-    return new URLSearchParams(window.location.search).get("view") === "broadcast" ? { ...preferences, inventoryMode: "broadcast" as const } : preferences;
+    const params = new URLSearchParams(window.location.search);
+    const layout = params.get("layout");
+    if (popout) return { ...preferences, inventoryMode: isInventoryMode(layout) ? layout : loadPopoutInventoryMode(window.localStorage) };
+    return params.get("view") === "broadcast" ? { ...preferences, presentation: "broadcast" as const } : preferences;
   });
+  const broadcast = !popout && ui.presentation === "broadcast";
+  const [windowNotice, setWindowNotice] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [debugOpen, setDebugOpen] = useState(false);
+  useEffect(() => { if (popout) document.title = "Secret of Mana Inventory"; }, [popout]);
   const setInventoryMode = (mode: InventoryMode) => {
-    if (mode !== "broadcast" && new URLSearchParams(window.location.search).get("view") === "broadcast") {
-      const url = new URL(window.location.href); url.searchParams.delete("view");
+    if (popout) {
+      const url = new URL(window.location.href); url.searchParams.set("layout", mode);
       window.history.replaceState(null, "", url);
     }
     setUi((current) => ({ ...current, inventoryMode: mode }));
-    if (mode === "broadcast") { setSettingsOpen(false); setDebugOpen(false); }
+  };
+  const setPresentation = (presentation: PresentationMode) => {
+    const url = new URL(window.location.href);
+    if (presentation === "broadcast") url.searchParams.set("view", "broadcast");
+    else if (url.searchParams.get("view") === "broadcast") url.searchParams.delete("view");
+    window.history.replaceState(null, "", url);
+    setUi(current => ({ ...current, presentation }));
+  };
+  const inventoryWindowUrl = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("view", "inventory-popout"); url.searchParams.set("layout", ui.inventoryMode);
+    return url.href;
+  };
+  const openInventoryWindow = () => {
+    const width = ui.inventoryMode === "square" ? 350 : ui.inventoryMode === "compact" ? 190 : 260;
+    if (!window.open(inventoryWindowUrl(), "som-inventory-popout", `popup,width=${width},height=780`)) {
+      setWindowNotice("Pop-up blocked. Allow this site's pop-ups or use the inventory link below.");
+    }
   };
   useEffect(() => {
-    if (ui.inventoryMode !== "broadcast") return;
+    if (!broadcast && !popout) return;
     const exitBroadcast = (event: KeyboardEvent) => {
       if (event.ctrlKey || event.altKey || event.metaKey || (event.target instanceof HTMLElement && event.target.matches("input,select,textarea,[contenteditable]"))) return;
-      const modes: Record<string, InventoryMode> = { n: "normal", c: "compact", s: "square", Escape: "normal" };
-      const mode = modes[event.key === "Escape" ? event.key : event.key.toLowerCase()];
+      if (settingsOpen || debugOpen) return;
+      if (event.key === "Escape" && broadcast) { event.preventDefault(); setPresentation("normal"); return; }
+      const modes: Record<string, InventoryMode> = { n: "normal", c: "compact", s: "square" };
+      const mode = modes[event.key.toLowerCase()];
       if (mode) { event.preventDefault(); setInventoryMode(mode); }
     };
     window.addEventListener("keydown", exitBroadcast);
     return () => window.removeEventListener("keydown", exitBroadcast);
-  }, [ui.inventoryMode]);
+  }, [broadcast, popout, settingsOpen, debugOpen]);
 
   useEffect(() => {
     const unsubscribe = autotracker.subscribe(setSnapshot);
@@ -64,7 +90,19 @@ export default function App() {
   }, []);
   useEffect(() => saveManualState(window.localStorage, manual), [manual]);
   useEffect(() => saveWorldState(window.localStorage, world), [world]);
-  useEffect(() => saveUiPreferences(window.localStorage, ui), [ui]);
+  useEffect(() => {
+    if (popout) savePopoutInventoryMode(window.localStorage, ui.inventoryMode);
+    else saveUiPreferences(window.localStorage, ui);
+  }, [ui, popout]);
+  useEffect(() => {
+    const receiveStorage = (event: StorageEvent) => {
+      if (event.storageArea && event.storageArea !== window.localStorage) return;
+      if (event.key === null || event.key === WORLD_STORAGE_KEY) setWorld(loadWorldState(window.localStorage));
+      if (event.key === null || event.key === MANUAL_STORAGE_KEY) setManual(loadManualState(window.localStorage));
+    };
+    window.addEventListener("storage", receiveStorage);
+    return () => window.removeEventListener("storage", receiveStorage);
+  }, []);
   useEffect(() => {
     if (!settingsOpen && !debugOpen) return;
     const onKeyDown = (event: KeyboardEvent) => {
@@ -77,18 +115,11 @@ export default function App() {
   const toggleManualCheck = (id: LocationId) => {
     setManual((current) => setManualCompletion(current, id, !isManuallyCompleted(current, id)));
   };
-  const toggleManualItem = (id: InventoryId) => {
-    setManualItems((current) => {
-      const next = new Set(current);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
   const selectDevice = (device: string) => { void autotracker.selectDevice(device); };
   const reset = (scope: ResetScope) => {
     const next = resetTracking(scope, { world, manual, manualItems });
-    setWorld(next.world); setManual(next.manual); setManualItems(next.manualItems);
+    setWorld(next.world); setManual(next.manual);
+    if (scope !== "orbs") clearManualItems();
   };
   const updateSetting = <K extends keyof WorldSettings>(key: K, value: WorldSettings[K]) =>
     setWorld((current) => ({ ...current, settings: { ...current.settings, [key]: value,
@@ -117,8 +148,8 @@ export default function App() {
   const dungeon = activeDungeon(ui.dungeonMode, snapshot.gameDetected ? snapshot.game?.currentMap : null);
 
   return (
-    <div className={`tracker-shell inventory-${ui.inventoryMode}`}>
-      {ui.inventoryMode !== "broadcast" && <header className="topbar">
+    <div className={`tracker-shell inventory-${ui.inventoryMode}${broadcast ? " presentation-broadcast" : ""}${popout ? " inventory-popout" : ""}`}>
+      {!popout && <header className="topbar">
         <div className="brand">
           <div><strong>Secret of Mana</strong><span>Open Mode Tracker</span></div></div>
         <div className="top-status">
@@ -141,10 +172,12 @@ export default function App() {
       <div className="workspace">
         <ItemPanel ram={snapshot.ram} manualItems={manualItems} world={world} mode={ui.inventoryMode}
           onSetMode={setInventoryMode}
+          onOpenInventoryWindow={popout ? undefined : openInventoryWindow}
+          onCloseInventoryWindow={popout ? () => { window.close(); setWindowNotice("If this tab was opened directly, close it using your browser's tab controls."); } : undefined}
           onToggleManualItem={toggleManualItem} onSetRole={setRole}
           onToggleGp={(id) => setWorld((current) => cycleGpHint(current, id))}
           onResolveRevival={(count) => setWorld((current) => setReviveSeedResolution(current, count))} />
-        {ui.inventoryMode !== "broadcast" && <div className={`map-surfaces${dungeon ? " with-dungeon" : ""}`}>
+        {!popout && <div className={`map-surfaces${dungeon ? " with-dungeon" : ""}`}>
           <WorldMap ram={snapshot.ram} manual={manual} manualItems={manualItems} world={world}
             onToggleManualCheck={toggleManualCheck} onSelectOrb={selectOrb}
             onSetOrbCleared={(id, cleared) => setWorld((current) => setOrbCleared(current, id, cleared))}
@@ -154,13 +187,19 @@ export default function App() {
         </div>}
       </div>
 
-      {ui.inventoryMode === "broadcast" && <button type="button" className="broadcast-exit"
-        aria-label="Exit Broadcast to Normal inventory" title="Return: N Normal · C Compact · S Square · Escape Normal"
-        onClick={() => setInventoryMode("normal")}>N/C/S · Esc to return</button>}
+      {windowNotice && <p className="window-notice" role="status">{windowNotice}
+        {!popout && <> <a href={inventoryWindowUrl()} target="_blank" rel="noreferrer">Open Inventory Window</a></>}</p>}
+      {popout && <div className="popout-connection" role="status" title={`${snapshot.sni.error ?? snapshot.sni.phase}${snapshot.error ? ` · ${snapshot.error}` : ""}. Each window connects to its own local SNI device.`}>
+        SNI {sniConnected ? "Connected" : "Disconnected"} · Game {snapshot.gameDetected ? "Detected" : "Not detected"}
+        {snapshot.sni.devices.length > 1 && <select aria-label="Inventory SNI device" value={snapshot.sni.attachedDevice ?? ""}
+          onChange={event => selectDevice(event.target.value)}>{snapshot.sni.devices.map(device => <option key={device} value={device}>{device}</option>)}</select>}
+      </div>}
 
-      {ui.inventoryMode !== "broadcast" && <footer className="footerbar">
+      {!popout && <footer className="footerbar">
         <div><button type="button" onClick={() => setSettingsOpen(true)}>Settings</button>
-          <button type="button" onClick={() => setDebugOpen((open) => !open)} aria-expanded={debugOpen}>Debug</button></div>
+          <button type="button" onClick={() => setDebugOpen((open) => !open)} aria-expanded={debugOpen}>Debug</button>
+          <button type="button" aria-label="Broadcast presentation" aria-pressed={broadcast} title="Full-page black presentation · Escape to exit"
+            onClick={() => setPresentation(broadcast ? "normal" : "broadcast")}>{broadcast ? "Exit Broadcast (Esc)" : "Broadcast"}</button></div>
         <div className="footer-meta"><a href={`${import.meta.env.BASE_URL}POPTRACKER_LICENSE.txt`} target="_blank" rel="noreferrer">PopTracker source notice</a>
           <a href={`${import.meta.env.BASE_URL}fonts/license.txt`} target="_blank" rel="noreferrer">Manaspace · zone38</a></div>
       </footer>}

@@ -24,7 +24,8 @@ export interface EffectiveCheckState {
   completionSource: "manual" | "ram" | "none";
 }
 
-const STORAGE_KEY = "som-web-tracker:manual-state";
+export const MANUAL_STORAGE_KEY = "som-web-tracker:manual-state";
+const STORAGE_KEY = MANUAL_STORAGE_KEY;
 const MINI_STORAGE_KEY = "som-web-tracker-mini:manual-state:v2";
 // Retain the original browser key solely to migrate existing Potos marks.
 const LEGACY_POTOS_STORAGE_KEY = "som-web-tracker-mvp:manual-state:v1";

@@ -1,14 +1,13 @@
 import { readFileSync } from "node:fs";
 import { expect, it } from "vitest";
 
-it("Broadcast is pure black and borderless, compactly shares the same icons without capture controls", () => {
+it("Broadcast and pop-out have black surfaces without replacing the three inventory layouts", () => {
   const css = readFileSync("src/styles.css", "utf8");
-  expect(css).toContain("body:has(.inventory-broadcast) { background: #000000; min-width: 0; overflow: hidden; }");
-  expect(css).toContain("html:has(.inventory-broadcast), #root:has(.inventory-broadcast) { background: #000000; }");
-  expect(css).toMatch(/\.broadcast-exit \{[^}]+background: #000000;/);
-  expect(css).toContain("width: min(270px, 100vw)");
-  expect(css).toContain(".inventory-broadcast .item-card");
-  expect(css).toContain("border: 0; border-radius: 0; padding: 0; background: #000000;");
+  expect(css).toContain("#root:has(.presentation-broadcast, .inventory-popout), .presentation-broadcast, .inventory-popout { background: #000000; }");
+  expect(css).toContain(".map-panel, .map-viewport");
+  expect(css).toContain(".inventory-popout .item-scroll { overflow: visible; }");
+  expect(css).not.toContain(".inventory-broadcast");
+  expect(css).not.toMatch(/\.presentation-broadcast[^}]+display: none/);
 });
 
 it("keeps unknown GP knowledge visually quiet but discoverable on hover, keyboard focus and touch", () => {

@@ -46,7 +46,8 @@ export interface WorldState {
   closedCannonOffices: CannonNodeId[];
 }
 
-const KEY = "som-web-tracker:world-state:v3";
+export const WORLD_STORAGE_KEY = "som-web-tracker:world-state:v3";
+const KEY = WORLD_STORAGE_KEY;
 const V2_KEY = "som-web-tracker:world-state:v2";
 const LEGACY_KEY = "som-web-tracker:world-state:v1";
 export function emptyWorldState(): WorldState {

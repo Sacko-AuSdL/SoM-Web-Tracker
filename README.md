@@ -11,7 +11,8 @@ installation of the tracker.** No ROM, emulator or SNI installation is bundled.
 ## Features
 
 - World-map checks, reachability and completion counters.
-- Normal, Compact and Square inventory layouts, plus an icon-only Broadcast view.
+- Normal, Compact and Square inventory layouts, independent full-page Broadcast
+  presentation, and an inventory-only pop-out window.
 - Local SNI autotracking with manual tracking as a fallback.
 - Randomizer Settings String import, Crystal Orbs, Cannon Travel and Kakkara Start.
 - Compatible Sandship builds: one Captain prize check, plus a separate Morie hint.
@@ -21,7 +22,7 @@ installation of the tracker.** No ROM, emulator or SNI installation is bundled.
 
 1. [Open Web Tracker](https://sacko-ausdl.github.io/SoM-Web-Tracker/).
 2. In **Settings**, import your Randomizer Settings String or review the options.
-3. Choose **N / C / S / B** for your preferred inventory layout. Drag/zoom the map;
+3. Choose **N / C / S** for your preferred inventory layout. Drag/zoom the map;
    hover or click a marker for details. Green is reachable, red blocked,
    amber unknown/partial, and grey completed.
    Map instructions are tucked into **?** beside Fit; Cannon guidance appears
@@ -36,23 +37,33 @@ installation of the tracker.** No ROM, emulator or SNI installation is bundled.
    `3 / 5–7`). Choose an exact count in that range, or **Unknown / Reset** to
    restore it. Without restrictive bounds the choices are 1–8.
 
-### Broadcast / OBS
+### Broadcast and inventory window / OBS
 
-Choose **B**, or open the tracker with **`?view=broadcast`** appended to its URL.
-Broadcast shows the same inventory icons on pure black—no map, panels,
-headings, check counters or layout buttons. Missing items stay dimmed; role
-overlays and weapon Orb stages remain meaningful. A **280 × 180** browser source
-fits the compact five-row inventory; larger frames simply add black space.
+Choose **Broadcast** in the footer, or append **`?view=broadcast`** to the URL.
+This gives the **complete tracker** a black background: map, inventory, checks,
+controls and panels stay available. N/C/S still selects your inventory layout.
+**Exit Broadcast** or **Escape** restores normal presentation without changing
+that layout. Escape closes an open Settings/Debug panel first.
 
-The small hint below the icons is clickable to return to Normal. Alternatively,
-focus the page (OBS: **Interact**) and press **N**, **C**, **S** or **Escape** to
-return. Layout choice persists. Use Normal/Compact/Square for settings, GP hints
-and the MTR dropdown before switching to Broadcast.
+For inventory only, click **↗ Open Inventory Window** beside N/C/S, or append
+**`?view=inventory-popout`**. The separate black window uses the same inventory,
+icons, GP controls, MTR dropdown and manual interactions. It has N/C/S and a
+small **x** close control, but no map or decorative application header. If the
+browser blocks the pop-up, use the displayed direct link or allow this site's
+pop-ups. Directly opened tabs may need closing through the browser tab controls.
 
-OBS Browser Source and your regular browser may use separate browser storage
-and separate local SNI connections. There is **no invented synchronization**:
-configure the OBS source itself when needed. Live SNI feeds its own inventory;
-manual session marks belong to the tab in which you made them.
+Same-origin windows in the same browser storage profile share saved seed
+configuration/GP/MTR knowledge and synchronize manual session inventory marks.
+Each window makes its **own local SNI connection** and follows real RAM rollback.
+Reloading can recover session marks from another open peer; closing/reloading
+the last view does not turn those marks into permanent inventory.
+
+**OBS Browser Source is a separate browser environment.** Do not assume it shares
+storage, manual marks, seed settings or SNI permissions with your regular browser.
+Configure its own tracker/profile and local SNI access. The small pop-out status
+shows SNI/game detection; multiple SNI devices can be selected there.
+See [Broadcast and pop-out details](docs/broadcast-and-popout.md) for tested sizes,
+synchronization boundaries and OBS setup notes.
 
 Progress/configuration stays in this browser, not in a cloud account. Use
 **New Seed Reset** when changing seeds; the tracker does not automatically keep

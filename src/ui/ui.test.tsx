@@ -187,7 +187,7 @@ describe("compact inventory", () => {
     const ram = emptyRamState();
     const world = emptyWorldState();
     function Harness() {
-      const [mode, setMode] = useState<"normal" | "compact" | "square" | "broadcast">("normal");
+      const [mode, setMode] = useState<"normal" | "compact" | "square">("normal");
       return <ItemPanel ram={ram} manualItems={new Set()} world={world} mode={mode}
         onSetMode={setMode} onSetRole={vi.fn()} onToggleManualItem={vi.fn()} />;
     }

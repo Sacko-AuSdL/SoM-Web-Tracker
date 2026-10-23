@@ -60,7 +60,6 @@ export function SettingsPanel({ sni, onSelectDevice, world, onUpdateSetting, onS
             {onSetInventoryMode && <label>Inventory Layout<select value={inventoryMode ?? "normal"}
               onChange={(event) => onSetInventoryMode(event.target.value as InventoryMode)}>
               <option value="normal">Normal</option><option value="compact">Compact</option><option value="square">Square</option>
-              <option value="broadcast">Broadcast (N/C/S or Escape to return)</option>
             </select></label>}
             <label>Logic<select value={world.settings.logic} onChange={(event) => onUpdateSetting("logic", event.target.value as WorldSettings["logic"])}>
               <option value="basic">Basic</option><option value="restrictive">Restrictive</option>

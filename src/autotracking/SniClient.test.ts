@@ -157,6 +157,23 @@ function waitForTrackerSnapshot(
 }
 
 describe("SniClient usb2snes flow", () => {
+  it("feeds independent main/pop-out SNI clients and keeps the pop-out live after the main window stops", async () => {
+    vi.stubGlobal("WebSocket", MockWebSocket);
+    const main = new PotosAutotracker("ws://mock-sni:23074"), popout = new PotosAutotracker("ws://mock-sni:23074");
+    main.start(); popout.start();
+    try {
+      await Promise.all([main, popout].map(tracker => waitForTrackerSnapshot(tracker, s => s.gameDetected && s.ram.inventory["weapon-spear"] === true)));
+      expect(MockWebSocket.instances).toHaveLength(2);
+      mockMemory.set(0xf5cfcb, new Uint8Array([0]));
+      await Promise.all([main, popout].map(tracker => waitForTrackerSnapshot(tracker, s => s.gameDetected && s.ram.inventory["weapon-spear"] === false)));
+      main.stop(); mockMemory.set(0xf5cfcb, new Uint8Array([1]));
+      const acquired = await waitForTrackerSnapshot(popout, s => s.gameDetected && s.ram.inventory["weapon-spear"] === true);
+      expect(acquired.sni.phase).toBe("attached");
+      expect(MockWebSocket.instances[0].readyState).toBe(MockWebSocket.CLOSED);
+      expect(MockWebSocket.instances[1].readyState).toBe(MockWebSocket.OPEN);
+    } finally { main.stop(); popout.stop(); }
+  }, 10000);
+
   it("rehydrates Pandora Girl from the reported $E17420/$E151C8/$CFAF trace on a fresh tracker, not browser persistence", async () => {
     vi.stubGlobal("WebSocket", MockWebSocket);
     mockMemory.set(0x01e7a3, new Uint8Array([0x20,0x74,0xe1]));
